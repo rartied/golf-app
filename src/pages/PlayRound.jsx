@@ -335,9 +335,9 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
     const totalDiff = totalGross - totalPar;
 
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="h-dvh bg-gray-50 flex flex-col overflow-hidden">
         {/* Green header */}
-        <div className="bg-golf-green safe-pt px-4 pt-10 pb-4">
+        <div className="bg-golf-green safe-pt px-4 pt-10 pb-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setPhase('setup')}
@@ -422,7 +422,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         </div>
 
         {/* Navigation */}
-        <div className="px-4 pb-6 safe-pb space-y-2">
+        <div className="px-4 pb-6 safe-pb space-y-2 flex-shrink-0">
           <div className="flex gap-3">
             {currentHole > 0 ? (
               <button

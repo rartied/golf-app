@@ -13,7 +13,7 @@ function emptyHoles() {
   return Array.from({ length: 18 }, (_, i) => ({
     number: i + 1,
     par: 4,
-    strokeIndex: i + 1,
+    strokeIndex: null,
   }));
 }
 
@@ -25,8 +25,10 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   const [name, setName] = useState(existing?.name || '');
   const [location, setLocation] = useState(existing?.location || '');
   const [tees, setTees] = useState(existing?.tees || [emptyTee()]);
-  const [holes, setHoles] = useState(existing?.holes || []);
-  const [showHoles, setShowHoles] = useState(existing?.holes?.length === 18);
+  const [holes, setHoles] = useState(
+    existing?.holes?.length === 18 ? existing.holes : emptyHoles()
+  );
+  const [showHoles, setShowHoles] = useState(true);
   const [errors, setErrors] = useState({});
 
   function validate() {
@@ -54,7 +56,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
         slope: parseInt(t.slope),
         par: parseInt(t.par),
       })),
-      holes: showHoles ? holes : [],
+      holes,
     };
 
     if (existing) updateCourse(course);
@@ -68,12 +70,12 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
     setTees(t => t.map(x => x.id === id ? { ...x, [field]: val } : x));
   }
 
-  function toggleHoles() {
-    if (!showHoles && holes.length === 0) setHoles(emptyHoles());
-    setShowHoles(s => !s);
+  function updateHolePar(idx, par) {
+    setHoles(h => h.map((hole, i) => i === idx ? { ...hole, par } : hole));
   }
-  function updateHole(idx, field, val) {
-    setHoles(h => h.map((hole, i) => i === idx ? { ...hole, [field]: parseInt(val) || hole[field] } : hole));
+
+  function updateHoleSI(idx, val) {
+    setHoles(h => h.map((hole, i) => i === idx ? { ...hole, strokeIndex: val } : hole));
   }
 
   return (
@@ -184,68 +186,75 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
           </button>
         </div>
 
-        {/* Hole details (optional) */}
+        {/* Hole Details */}
         <div className="bg-white rounded-2xl shadow-sm">
           <button
-            onClick={toggleHoles}
+            onClick={() => setShowHoles(s => !s)}
             className="w-full px-4 py-4 flex items-center justify-between text-left"
           >
-            <div>
-              <p className="font-semibold text-gray-700 text-sm">Hole Details (Optional)</p>
-              <p className="text-xs text-gray-400 mt-0.5">Par & stroke index per hole — needed for personal par calculation</p>
-            </div>
-            {showHoles ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+            <p className="font-semibold text-gray-700 text-sm">Hole Details</p>
+            {showHoles
+              ? <ChevronUp size={18} className="text-gray-400" />
+              : <ChevronDown size={18} className="text-gray-400" />}
           </button>
 
           {showHoles && (
-            <div className="px-4 pb-5 space-y-5">
+            <div className="px-4 pb-5 space-y-6">
               {[{ label: 'Front 9', start: 0 }, { label: 'Back 9', start: 9 }].map(({ label, start }) => (
                 <div key={label}>
-                  <p className="text-xs font-semibold text-gray-500 mb-2">{label}</p>
-                  <div className="grid gap-y-2" style={{ gridTemplateColumns: '2rem repeat(9, 1fr)' }}>
-                    {/* Hole numbers */}
-                    <div className="text-[10px] text-gray-400 font-medium self-center">Hole</div>
-                    {holes.slice(start, start + 9).map(h => (
-                      <div key={h.number} className="text-[11px] text-gray-400 text-center self-center font-medium">
-                        {h.number}
-                      </div>
-                    ))}
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{label}</p>
+                  <div className="space-y-2">
+                    {holes.slice(start, start + 9).map((h, rel) => {
+                      const idx = start + rel;
+                      return (
+                        <div key={h.number} className="flex items-center gap-3">
+                          {/* Hole number */}
+                          <div className="w-7 text-center flex-shrink-0">
+                            <span className="text-sm font-bold text-gray-400">{h.number}</span>
+                          </div>
 
-                    {/* Par — tap to cycle 3 → 4 → 5 → 3 */}
-                    <div className="text-[10px] text-gray-500 font-semibold self-center">Par</div>
-                    {holes.slice(start, start + 9).map((h, rel) => (
-                      <button
-                        key={h.number}
-                        type="button"
-                        onClick={() => updateHole(start + rel, 'par', h.par === 3 ? 4 : h.par === 4 ? 5 : 3)}
-                        className={`mx-0.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
-                          h.par === 3 ? 'bg-blue-100 text-blue-700' :
-                          h.par === 5 ? 'bg-amber-100 text-amber-700' :
-                                        'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {h.par}
-                      </button>
-                    ))}
+                          {/* Par — tap to cycle 3 → 4 → 5 → 3 */}
+                          <button
+                            type="button"
+                            onClick={() => updateHolePar(idx, h.par === 3 ? 4 : h.par === 4 ? 5 : 3)}
+                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors ${
+                              h.par === 3 ? 'bg-blue-100 text-blue-700' :
+                              h.par === 5 ? 'bg-amber-100 text-amber-700' :
+                                            'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            Par {h.par}
+                          </button>
 
-                    {/* Stroke Index */}
-                    <div className="text-[10px] text-gray-500 font-semibold self-center">SI</div>
-                    {holes.slice(start, start + 9).map((h, rel) => (
-                      <input
-                        key={h.number}
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        max="18"
-                        value={h.strokeIndex}
-                        onChange={e => updateHole(start + rel, 'strokeIndex', e.target.value)}
-                        className="mx-0.5 border border-gray-200 rounded-lg text-center py-1.5 text-[11px] outline-none focus:border-golf-green bg-white"
-                      />
-                    ))}
+                          {/* SI stepper */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => updateHoleSI(idx, h.strokeIndex === null || h.strokeIndex <= 1 ? null : h.strokeIndex - 1)}
+                              className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
+                            >
+                              −
+                            </button>
+                            <div className="w-9 text-center">
+                              <span className="text-sm font-bold text-gray-700">
+                                {h.strokeIndex ?? '—'}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => updateHoleSI(idx, Math.min((h.strokeIndex ?? 0) + 1, 18))}
+                              className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
-              <p className="text-[11px] text-gray-400">Par: tap to cycle 3 → 4 → 5 · SI = Stroke Index (1 = hardest)</p>
+              <p className="text-xs text-gray-400">Par: tap to cycle · SI = Stroke Index (1 = hardest hole)</p>
             </div>
           )}
         </div>

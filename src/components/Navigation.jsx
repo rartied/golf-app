@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Flag, History, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Flag, History, BookOpen, Target } from 'lucide-react';
 
 const tabs = [
   { to: '/', icon: LayoutDashboard, label: 'Home' },
   { to: '/play', icon: Flag, label: 'Play' },
+  { to: '/strokes', icon: Target, label: 'Strokes' },
   { to: '/history', icon: History, label: 'History' },
   { to: '/courses', icon: BookOpen, label: 'Courses' },
 ];

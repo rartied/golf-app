@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { useAppData } from './hooks/useAppData'
 import Navigation from './components/Navigation'
 import Dashboard from './pages/Dashboard'
@@ -38,6 +38,7 @@ function ErrorScreen({ message }) {
 
 export default function App() {
   const data = useAppData()
+  const location = useLocation()
 
   if (data.loading) return <LoadingScreen />
   if (data.error)   return <ErrorScreen message={data.error} />
@@ -54,7 +55,7 @@ export default function App() {
         <Route path="/courses/:courseId" element={<AddCourse {...data} />} />
         <Route path="/strokes" element={<StrokeCard {...data} />} />
       </Routes>
-      <Navigation />
+      {location.pathname !== '/play' && <Navigation />}
     </>
   )
 }

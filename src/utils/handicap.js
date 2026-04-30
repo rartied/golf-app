@@ -6,7 +6,7 @@ const WHS_TABLE = [
   { count: 1, adj: -2.0 },    // 3
   { count: 1, adj: -1.0 },    // 4
   { count: 1, adj: 0 },       // 5
-  { count: 2, adj: 0 },       // 6
+  { count: 2, adj: -1.0 },    // 6
   { count: 2, adj: 0 },       // 7
   { count: 2, adj: 0 },       // 8
   { count: 3, adj: 0 },       // 9
@@ -38,7 +38,7 @@ export function calcHandicapIndex(rounds) {
   const sorted = recent.map(r => r.scoreDifferential).sort((a, b) => a - b);
   const best = sorted.slice(0, entry.count);
   const avg = best.reduce((s, d) => s + d, 0) / entry.count;
-  return Math.min(parseFloat(((avg * 0.96) + entry.adj).toFixed(1)), 54.0);
+  return Math.min(parseFloat(((avg + entry.adj) * 0.96).toFixed(1)), 54.0);
 }
 
 export function calcCourseHandicap(handicapIndex, slope, courseRating, par) {

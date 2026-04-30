@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const TEE_COLORS = ['White', 'Yellow', 'Blue', 'Red', 'Gold', 'Black', 'Green', 'Silver'];
+const TEE_COLORS = ['White', 'Yellow', 'Blue', 'Red', 'Gold', 'Black', 'Green', 'Silver', 'Orange', 'Purple'];
 
 function emptyTee() {
   return { id: uuid(), name: '', color: 'White', rating: '', slope: '', par: 72 };
@@ -35,7 +35,6 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
     const e = {};
     if (!name.trim()) e.name = 'Course name is required';
     tees.forEach((t, i) => {
-      if (!t.name.trim()) e[`tee_name_${i}`] = 'Name required';
       if (!t.rating || isNaN(t.rating)) e[`tee_rating_${i}`] = 'Required';
       if (!t.slope || isNaN(t.slope) || t.slope < 55 || t.slope > 155) e[`tee_slope_${i}`] = '55–155';
     });
@@ -127,49 +126,58 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Name *</label>
+                  <label className="text-xs text-gray-400 mb-1 block">Name</label>
                   <input
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors[`tee_name_${i}`] ? 'border-red-400' : 'border-gray-200'}`}
+                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green"
                     value={tee.name}
-                    onChange={e => { updateTee(tee.id, 'name', e.target.value); setErrors(x => ({ ...x, [`tee_name_${i}`]: '' })); }}
-                    placeholder="e.g. Blue"
+                    onChange={e => updateTee(tee.id, 'name', e.target.value)}
+                    placeholder="e.g. Blue (optional)"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Color</label>
-                  <select
-                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-golf-green"
+                  {/* datalist lets user pick a preset or type any custom color */}
+                  <label className="text-xs text-gray-400 mb-1 block">Color *</label>
+                  <input
+                    list={`tee-colors-${tee.id}`}
+                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green bg-white"
                     value={tee.color}
                     onChange={e => updateTee(tee.id, 'color', e.target.value)}
-                  >
-                    {TEE_COLORS.map(c => <option key={c}>{c}</option>)}
-                  </select>
+                    placeholder="e.g. White"
+                  />
+                  <datalist id={`tee-colors-${tee.id}`}>
+                    {TEE_COLORS.map(c => <option key={c} value={c} />)}
+                  </datalist>
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Course Rating *</label>
                   <input
                     type="number"
                     step="0.1"
+                    inputMode="decimal"
                     className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors[`tee_rating_${i}`] ? 'border-red-400' : 'border-gray-200'}`}
                     value={tee.rating}
                     onChange={e => { updateTee(tee.id, 'rating', e.target.value); setErrors(x => ({ ...x, [`tee_rating_${i}`]: '' })); }}
                     placeholder="72.1"
                   />
+                  {errors[`tee_rating_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_rating_${i}`]}</p>}
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Slope (55–155) *</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors[`tee_slope_${i}`] ? 'border-red-400' : 'border-gray-200'}`}
                     value={tee.slope}
                     onChange={e => { updateTee(tee.id, 'slope', e.target.value); setErrors(x => ({ ...x, [`tee_slope_${i}`]: '' })); }}
                     placeholder="113"
                   />
+                  {errors[`tee_slope_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_slope_${i}`]}</p>}
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Par</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green"
                     value={tee.par}
                     onChange={e => updateTee(tee.id, 'par', e.target.value)}
@@ -213,11 +221,18 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                             <span className="text-sm font-bold text-gray-400">{h.number}</span>
                           </div>
 
-                          {/* Par — tap to cycle 3 → 4 → 5 → 3 */}
+                          {/* Par — left half decrements, right half increments */}
                           <button
                             type="button"
-                            onClick={() => updateHolePar(idx, h.par === 3 ? 4 : h.par === 4 ? 5 : 3)}
-                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors ${
+                            onClick={e => {
+                              const { left, width } = e.currentTarget.getBoundingClientRect();
+                              const isRight = (e.clientX - left) > width / 2;
+                              updateHolePar(idx, isRight
+                                ? Math.min(h.par + 1, 5)
+                                : Math.max(h.par - 1, 3)
+                              );
+                            }}
+                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors select-none ${
                               h.par === 3 ? 'bg-blue-100 text-blue-700' :
                               h.par === 5 ? 'bg-amber-100 text-amber-700' :
                                             'bg-gray-100 text-gray-700'
@@ -226,7 +241,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                             Par {h.par}
                           </button>
 
-                          {/* SI stepper */}
+                          {/* SI — minus, editable input, plus */}
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <button
                               type="button"
@@ -235,11 +250,20 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                             >
                               −
                             </button>
-                            <div className="w-9 text-center">
-                              <span className="text-sm font-bold text-gray-700">
-                                {h.strokeIndex ?? '—'}
-                              </span>
-                            </div>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min="1"
+                              max="18"
+                              value={h.strokeIndex ?? ''}
+                              onChange={e => {
+                                if (e.target.value === '') { updateHoleSI(idx, null); return; }
+                                const n = parseInt(e.target.value);
+                                if (!isNaN(n) && n >= 1 && n <= 18) updateHoleSI(idx, n);
+                              }}
+                              placeholder="—"
+                              className="w-9 h-10 text-center text-sm font-bold text-gray-700 bg-transparent border-0 outline-none"
+                            />
                             <button
                               type="button"
                               onClick={() => updateHoleSI(idx, Math.min((h.strokeIndex ?? 0) + 1, 18))}
@@ -254,7 +278,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   </div>
                 </div>
               ))}
-              <p className="text-xs text-gray-400">Par: tap to cycle · SI = Stroke Index (1 = hardest hole)</p>
+              <p className="text-xs text-gray-400">Par: tap left ← to lower, right → to raise · SI: tap or type</p>
             </div>
           )}
         </div>

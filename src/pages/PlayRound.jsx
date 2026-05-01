@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
-import { ArrowLeft, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Flag, Search } from 'lucide-react';
 import { storage } from '../utils/storage';
 import {
   calcCourseHandicap,
@@ -65,6 +65,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   const [holeScores, setHoleScores] = useState([]);
   const [currentHole, setCurrentHole] = useState(0);
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [courseSearch, setCourseSearch] = useState('');
 
   useEffect(() => {
     const saved = storage.getActiveRound();
@@ -245,8 +246,25 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                 </button>
               </div>
             ) : (
+              <>
+                {courses.length > 4 && (
+                  <div className="relative mb-2">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={courseSearch}
+                      onChange={e => setCourseSearch(e.target.value)}
+                      placeholder="Search courses…"
+                      className="w-full bg-white border border-gray-200 rounded-2xl pl-9 pr-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-golf-green shadow-sm"
+                    />
+                  </div>
+                )}
               <div className="space-y-2">
-                {courses.map(course => (
+                {courses.filter(c =>
+                  !courseSearch.trim() ||
+                  c.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
+                  (c.location ?? '').toLowerCase().includes(courseSearch.toLowerCase())
+                ).map(course => (
                   <button
                     key={course.id}
                     onClick={() => { setSelectedCourse(course); setSelectedTee(null); }}
@@ -273,6 +291,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                   </button>
                 ))}
               </div>
+              </>
             )}
           </div>
 

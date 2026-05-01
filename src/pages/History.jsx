@@ -136,7 +136,7 @@ function RoundRow({ round, navigate, compact }) {
       <div className="w-px h-10 bg-gray-100 flex-shrink-0" />
       <div className="flex-1 min-w-0">
         {!compact && <p className="font-semibold text-gray-900 text-sm truncate">{round.courseName}</p>}
-        <p className="text-gray-400 text-xs mt-0.5">{round.teeName} tees</p>
+        {round.teeName && <p className="text-gray-400 text-xs mt-0.5">{round.teeName}</p>}
       </div>
       <div className="text-right flex-shrink-0">
         <p className="font-bold text-gray-900 text-lg">{round.totalScore}</p>

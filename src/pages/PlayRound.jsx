@@ -260,10 +260,12 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                   </div>
                 )}
               <div className="space-y-2">
-                {courses.filter(c =>
-                  !courseSearch.trim() ||
-                  c.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
-                  (c.location ?? '').toLowerCase().includes(courseSearch.toLowerCase())
+                {(courseSearch.trim()
+                  ? courses.filter(c =>
+                      c.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
+                      (c.location ?? '').toLowerCase().includes(courseSearch.toLowerCase())
+                    )
+                  : courses.slice(0, 4)
                 ).map(course => (
                   <button
                     key={course.id}

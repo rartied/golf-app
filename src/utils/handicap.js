@@ -29,7 +29,7 @@ export function calcScoreDifferential(adjustedGrossScore, courseRating, slope) {
 
 export function calcHandicapIndex(rounds) {
   const recent = [...rounds]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .sort((a, b) => new Date(b.date + 'T00:00:00') - new Date(a.date + 'T00:00:00'))
     .slice(0, 20);
   const n = recent.length;
   if (n < 3) return null;
@@ -72,7 +72,7 @@ export function roundsNeededForHandicap(rounds) {
 
 export function getHandicapTrend(rounds) {
   if (rounds.length < 6) return null;
-  const sorted = [...rounds].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...rounds].sort((a, b) => new Date(b.date + 'T00:00:00') - new Date(a.date + 'T00:00:00'));
   const recent5 = sorted.slice(0, 5).map(r => r.scoreDifferential);
   const prev5 = sorted.slice(5, 10).map(r => r.scoreDifferential);
   if (prev5.length < 3) return null;

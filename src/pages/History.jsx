@@ -124,13 +124,13 @@ function RoundRow({ round, navigate, compact }) {
     >
       <div className="flex-shrink-0 text-center w-12">
         <p className="text-xs text-gray-400 font-medium uppercase">
-          {format(new Date(round.date), 'MMM')}
+          {format(new Date(round.date + 'T00:00:00'), 'MMM')}
         </p>
         <p className="text-xl font-black text-gray-900 leading-tight">
-          {format(new Date(round.date), 'd')}
+          {format(new Date(round.date + 'T00:00:00'), 'd')}
         </p>
         <p className="text-xs text-gray-400">
-          {format(new Date(round.date), 'yyyy')}
+          {format(new Date(round.date + 'T00:00:00'), 'yyyy')}
         </p>
       </div>
       <div className="w-px h-10 bg-gray-100 flex-shrink-0" />

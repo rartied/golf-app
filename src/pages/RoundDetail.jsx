@@ -127,7 +127,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
           />
         ) : (
           <p className="text-green-200 text-sm font-medium">
-            {format(new Date(round.date), 'EEEE, MMMM d, yyyy')}
+            {format(new Date(round.date + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}
           </p>
         )}
         <p className="text-white text-6xl font-black mt-1 leading-none">{displayTotal}</p>

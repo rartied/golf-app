@@ -60,6 +60,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
 
     if (existing) updateCourse(course);
     else addCourse(course);
+    window.scrollTo(0, 0);
     navigate('/courses');
   }
 

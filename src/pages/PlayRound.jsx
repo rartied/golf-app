@@ -247,7 +247,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
               </div>
             ) : (
               <>
-                {courses.length > 4 && (
+                {courses.length > 3 && (
                   <div className="relative mb-2">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
@@ -265,7 +265,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                       c.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
                       (c.location ?? '').toLowerCase().includes(courseSearch.toLowerCase())
                     )
-                  : courses.slice(0, 4)
+                  : courses.slice(0, 3)
                 ).map(course => (
                   <button
                     key={course.id}

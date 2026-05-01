@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 
 export default function History({ rounds }) {
   const navigate = useNavigate();
   const [view, setView] = useState('all'); // 'all' | 'byCourse'
+  const [expanded, setExpanded] = useState({}); // courseKey -> bool
 
   const sorted = [...rounds].sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -15,10 +16,14 @@ export default function History({ rounds }) {
   for (const r of sorted) {
     const key = r.courseId || r.courseName;
     if (!seen[key]) {
-      seen[key] = { name: r.courseName, rounds: [] };
+      seen[key] = { key, name: r.courseName, rounds: [] };
       courseGroups.push(seen[key]);
     }
     seen[key].rounds.push(r);
+  }
+
+  function toggleExpand(key) {
+    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   }
 
   return (
@@ -64,31 +69,58 @@ export default function History({ rounds }) {
         ) : view === 'all' ? (
           sorted.map(round => <RoundRow key={round.id} round={round} navigate={navigate} />)
         ) : (
-          courseGroups.map(group => (
-            <div key={group.name}>
-              <div className="flex items-center gap-2 px-1 pb-1.5 pt-2">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{group.name}</p>
-                <span className="text-xs text-gray-400">
-                  {group.rounds.length} round{group.rounds.length !== 1 ? 's' : ''}
-                </span>
+          courseGroups.map(group => {
+            const isOpen = !!expanded[group.key];
+            const latest = group.rounds[0];
+            return (
+              <div key={group.key} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                {/* Course header — tap to expand */}
+                <button
+                  onClick={() => toggleExpand(group.key)}
+                  className="w-full px-4 py-3 flex items-center gap-3 active:bg-gray-50 text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-900 text-sm">{group.name}</p>
+                    <p className="text-gray-400 text-xs mt-0.5">
+                      Last played {format(new Date(latest.date), 'MMM d, yyyy')} · {group.rounds.length} round{group.rounds.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {/* Most recent round always visible */}
+                <div className="border-t border-gray-100">
+                  <RoundRow round={latest} navigate={navigate} compact />
+                </div>
+
+                {/* Rest of rounds shown when expanded */}
+                {isOpen && group.rounds.length > 1 && (
+                  <div className="border-t border-gray-100">
+                    {group.rounds.slice(1).map(round => (
+                      <div key={round.id} className="border-b border-gray-50 last:border-0">
+                        <RoundRow round={round} navigate={navigate} compact />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                {group.rounds.map(round => <RoundRow key={round.id} round={round} navigate={navigate} />)}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
   );
 }
 
-function RoundRow({ round, navigate }) {
+function RoundRow({ round, navigate, compact }) {
   const diff = round.totalScore - round.coursePar;
   return (
     <button
       onClick={() => navigate(`/history/${round.id}`)}
-      className="w-full bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors text-left"
+      className="w-full bg-white px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors text-left"
     >
       <div className="flex-shrink-0 text-center w-12">
         <p className="text-xs text-gray-400 font-medium uppercase">
@@ -103,7 +135,7 @@ function RoundRow({ round, navigate }) {
       </div>
       <div className="w-px h-10 bg-gray-100 flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm truncate">{round.courseName}</p>
+        {!compact && <p className="font-semibold text-gray-900 text-sm truncate">{round.courseName}</p>}
         <p className="text-gray-400 text-xs mt-0.5">{round.teeName} tees</p>
       </div>
       <div className="text-right flex-shrink-0">

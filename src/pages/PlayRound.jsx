@@ -168,7 +168,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           <button onClick={() => navigate(-1)} className="p-1 -ml-1">
             <ArrowLeft size={22} className="text-gray-700" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Play Round</h1>
+          <h1 className="text-xl font-bold text-gray-900">Log Round</h1>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
@@ -211,7 +211,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           <button onClick={() => navigate(-1)} className="p-1 -ml-1">
             <ArrowLeft size={22} className="text-gray-700" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Play Round</h1>
+          <h1 className="text-xl font-bold text-gray-900">Log Round</h1>
         </div>
 
         <div className="px-4 pt-5 space-y-5">
@@ -339,7 +339,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
               onClick={handleStart}
               className="w-full bg-golf-green text-white font-semibold py-4 rounded-2xl active:opacity-90 transition-opacity"
             >
-              {date === new Date().toISOString().split('T')[0] ? 'Start Round' : 'Log Past Round'}
+              Log Round
             </button>
           )}
         </div>

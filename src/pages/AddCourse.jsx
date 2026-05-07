@@ -34,10 +34,30 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   function validate() {
     const e = {};
     if (!name.trim()) e.name = 'Course name is required';
+
+    const holeParSum = holes.reduce((s, h) => s + h.par, 0);
     tees.forEach((t, i) => {
       if (!t.rating || isNaN(t.rating)) e[`tee_rating_${i}`] = 'Required';
       if (!t.slope || isNaN(t.slope) || t.slope < 55 || t.slope > 155) e[`tee_slope_${i}`] = '55–155';
+      const teePar = parseInt(t.par);
+      if (!isNaN(teePar) && holeParSum !== teePar) {
+        e[`tee_par_${i}`] = `Hole pars total ${holeParSum}, but this tee is par ${teePar}`;
+      }
     });
+
+    const siValues = holes.map(h => h.strokeIndex);
+    if (siValues.some(v => v === null)) {
+      e.holes_si = 'All 18 holes must have an SI value set (1–18)';
+    } else {
+      const seen = new Set();
+      let dup = null;
+      for (const v of siValues) {
+        if (seen.has(v)) { dup = v; break; }
+        seen.add(v);
+      }
+      if (dup !== null) e.holes_si = `SI ${dup} is used more than once — each value 1–18 must appear exactly once`;
+    }
+
     return e;
   }
 
@@ -179,10 +199,11 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   <input
                     type="number"
                     inputMode="numeric"
-                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green"
+                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-gray-200'}`}
                     value={tee.par}
-                    onChange={e => updateTee(tee.id, 'par', e.target.value)}
+                    onChange={e => { updateTee(tee.id, 'par', e.target.value); setErrors(x => ({ ...x, [`tee_par_${i}`]: '' })); }}
                   />
+                  {errors[`tee_par_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_par_${i}`]}</p>}
                 </div>
               </div>
             </div>
@@ -281,6 +302,9 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
               ))}
               <p className="text-xs text-gray-400">Par: tap left ← to lower, right → to raise · SI: tap or type</p>
             </div>
+          )}
+          {errors.holes_si && (
+            <p className="text-red-500 text-xs px-4 pb-3">{errors.holes_si}</p>
           )}
         </div>
 

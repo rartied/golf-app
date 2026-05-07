@@ -46,7 +46,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
           <div className="w-10 h-10 bg-golf-light rounded-full flex items-center justify-center flex-shrink-0">
             <Flag size={20} className="text-golf-green" />
           </div>
-          <span className="text-sm font-semibold text-gray-800">Play Round / Log Score</span>
+          <span className="text-sm font-semibold text-gray-800">Log Score</span>
         </button>
       </div>
 

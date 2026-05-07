@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { useAppData } from './hooks/useAppData'
 import Navigation from './components/Navigation'
@@ -39,6 +40,8 @@ function ErrorScreen({ message }) {
 export default function App() {
   const data = useAppData()
   const location = useLocation()
+  const [courseSort, setCourseSort] = useState(null)
+  const [courseSearch, setCourseSearch] = useState('')
 
   if (data.loading) return <LoadingScreen />
   if (data.error)   return <ErrorScreen message={data.error} />
@@ -50,7 +53,7 @@ export default function App() {
         <Route path="/play" element={<PlayRound {...data} />} />
         <Route path="/history" element={<History {...data} />} />
         <Route path="/history/:id" element={<RoundDetail {...data} />} />
-        <Route path="/courses" element={<Courses {...data} />} />
+        <Route path="/courses" element={<Courses {...data} courseSort={courseSort} setCourseSort={setCourseSort} courseSearch={courseSearch} setCourseSearch={setCourseSearch} />} />
         <Route path="/courses/add" element={<AddCourse {...data} />} />
         <Route path="/courses/:courseId" element={<AddCourse {...data} />} />
         <Route path="/strokes" element={<StrokeCard {...data} />} />

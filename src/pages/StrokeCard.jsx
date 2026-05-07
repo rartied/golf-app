@@ -110,7 +110,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
                       key={tee.id}
                       onClick={() => setSelectedTee(tee)}
                       style={{ backgroundColor: teeColorHex(tee.color) }}
-                      className={`w-12 h-9 rounded-xl transition-all ${
+                      className={`px-4 py-2 min-w-[4rem] rounded-xl transition-all ${
                         isSelected ? 'ring-2 ring-offset-2 ring-gray-400' : 'opacity-50 active:opacity-80'
                       } ${tee.color === 'White' ? 'border border-gray-200' : ''}`}
                     />

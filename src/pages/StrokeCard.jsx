@@ -11,9 +11,6 @@ function teeColorHex(color) {
   return map[color] ?? '#9ca3af';
 }
 
-function teeTextColor(color) {
-  return ['White', 'Yellow', 'Silver'].includes(color) ? '#374151' : '#ffffff';
-}
 
 export default function StrokeCard({ courses, handicapIndex }) {
   const navigate = useNavigate();
@@ -112,16 +109,11 @@ export default function StrokeCard({ courses, handicapIndex }) {
                     <button
                       key={tee.id}
                       onClick={() => setSelectedTee(tee)}
-                      style={{
-                        backgroundColor: teeColorHex(tee.color),
-                        color: teeTextColor(tee.color),
-                      }}
-                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                      style={{ backgroundColor: teeColorHex(tee.color) }}
+                      className={`w-12 h-9 rounded-xl transition-all ${
                         isSelected ? 'ring-2 ring-offset-2 ring-gray-400' : 'opacity-50 active:opacity-80'
-                      }`}
-                    >
-                      {tee.name || tee.color}
-                    </button>
+                      } ${tee.color === 'White' ? 'border border-gray-200' : ''}`}
+                    />
                   );
                 })}
               </div>

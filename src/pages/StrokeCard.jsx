@@ -2,6 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { calcCourseHandicap, getHoleStrokes } from '../utils/handicap';
 
+function teeColorHex(color) {
+  const map = {
+    White: '#f3f4f6', Yellow: '#eab308', Blue: '#3b82f6',
+    Red: '#ef4444', Gold: '#d97706', Black: '#1f2937',
+    Green: '#16a34a', Silver: '#9ca3af', Orange: '#f97316', Purple: '#7c3aed',
+  };
+  return map[color] ?? '#9ca3af';
+}
+
+function teeTextColor(color) {
+  return ['White', 'Yellow', 'Silver'].includes(color) ? '#374151' : '#ffffff';
+}
+
 export default function StrokeCard({ courses, handicapIndex }) {
   const navigate = useNavigate();
   const [selectedCourse, setSelectedCourse] = useState(courses[0] ?? null);
@@ -93,19 +106,24 @@ export default function StrokeCard({ courses, handicapIndex }) {
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Tee</label>
               <div className="flex gap-2 flex-wrap">
-                {selectedCourse.tees.map(tee => (
-                  <button
-                    key={tee.id}
-                    onClick={() => setSelectedTee(tee)}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                      selectedTee?.id === tee.id
-                        ? 'bg-golf-green text-white'
-                        : 'bg-gray-100 text-gray-600 active:bg-gray-200'
-                    }`}
-                  >
-                    {tee.name}
-                  </button>
-                ))}
+                {selectedCourse.tees.map(tee => {
+                  const isSelected = selectedTee?.id === tee.id;
+                  return (
+                    <button
+                      key={tee.id}
+                      onClick={() => setSelectedTee(tee)}
+                      style={{
+                        backgroundColor: teeColorHex(tee.color),
+                        color: teeTextColor(tee.color),
+                      }}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                        isSelected ? 'ring-2 ring-offset-2 ring-gray-400' : 'opacity-50 active:opacity-80'
+                      }`}
+                    >
+                      {tee.name || tee.color}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

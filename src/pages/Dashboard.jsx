@@ -47,7 +47,6 @@ function TrendSparkline({ rounds, handicapIndex }) {
   const pts = data.map((d, i) => ({ x: px(i), y: py(d) }));
   const linePath = smoothCurve(pts);
   const last = pts[pts.length - 1];
-  const areaPath = `${linePath} L${last.x.toFixed(1)},${VH} L${pts[0].x.toFixed(1)},${VH} Z`;
   const latestRaw = raw[raw.length - 1];
   const relVal = handicapIndex != null ? latestRaw - handicapIndex : null;
   const relLabel = relVal != null
@@ -55,17 +54,8 @@ function TrendSparkline({ rounds, handicapIndex }) {
     : latestRaw.toFixed(1);
 
   return (
-    <div className="w-[62%] flex-shrink-0 flex flex-col items-center justify-center gap-2">
+    <div className="w-[62%] flex-shrink-0 flex flex-col items-center justify-center gap-0.5">
       <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" className="overflow-visible">
-        <defs>
-          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="white" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="white" stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
-
-        {/* Gradient area */}
-        <path d={areaPath} fill="url(#trendFill)" />
 
         {/* Handicap index reference line */}
         {handicapIndex != null && (

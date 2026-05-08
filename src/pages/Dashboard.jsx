@@ -87,8 +87,8 @@ function TrendSparkline({ rounds, handicapIndex }) {
           {relLabel}
         </text>
 
-        {/* Bottom label inside SVG */}
-        <text x={VW / 2} y={VH - 2} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600" letterSpacing="1">
+        {/* Label sits just below the HCP reference line */}
+        <text x={VW / 2} y={(py(handicapIndex ?? lo2) + 11).toFixed(1)} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600" letterSpacing="1">
           3-RND AVG · SCORE DIFF
         </text>
       </svg>

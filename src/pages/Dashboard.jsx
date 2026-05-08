@@ -49,9 +49,13 @@ function TrendSparkline({ rounds, handicapIndex }) {
   const last = pts[pts.length - 1];
   const areaPath = `${linePath} L${last.x.toFixed(1)},${VH} L${pts[0].x.toFixed(1)},${VH} Z`;
   const latestRaw = raw[raw.length - 1];
+  const relVal = handicapIndex != null ? latestRaw - handicapIndex : null;
+  const relLabel = relVal != null
+    ? (relVal >= 0 ? '+' : '') + relVal.toFixed(1)
+    : latestRaw.toFixed(1);
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
+    <div className="w-[44%] flex-shrink-0 flex flex-col justify-center gap-2">
       <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" className="overflow-visible">
         <defs>
           <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
@@ -84,13 +88,13 @@ function TrendSparkline({ rounds, handicapIndex }) {
         <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="7" fill="rgba(255,255,255,0.15)" />
         <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="3.5" fill="white" />
 
-        {/* Latest differential label above the dot */}
+        {/* Latest value label — score vs handicap */}
         <text
           x={last.x.toFixed(1)} y={(last.y - 11).toFixed(1)}
           textAnchor="middle" fill="white" fontSize="9.5" fontWeight="700"
           opacity="0.9"
         >
-          {latestRaw.toFixed(1)}
+          {relLabel}
         </text>
       </svg>
 

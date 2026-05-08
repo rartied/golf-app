@@ -3,6 +3,60 @@ import { format } from 'date-fns';
 import { TrendingDown, TrendingUp, Minus, ChevronRight, Flag, Plus } from 'lucide-react';
 import { roundsNeededForHandicap, getHandicapTrend } from '../utils/handicap';
 
+function TrendSparkline({ rounds, handicapIndex }) {
+  const data = [...rounds]
+    .filter(r => r.scoreDifferential != null)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(-20)
+    .map(r => r.scoreDifferential);
+
+  if (data.length < 2) return null;
+
+  const W = 130, H = 66, PAD = 5;
+  const iW = W - PAD * 2;
+  const iH = H - PAD * 2;
+
+  const allVals = handicapIndex != null ? [...data, handicapIndex] : data;
+  const lo = Math.min(...allVals);
+  const hi = Math.max(...allVals);
+  const span = hi - lo || 1;
+  const lo2 = lo - span * 0.18;
+  const hi2 = hi + span * 0.18;
+  const span2 = hi2 - lo2;
+
+  const px = i => PAD + (i / (data.length - 1)) * iW;
+  const py = v => PAD + (1 - (v - lo2) / span2) * iH;
+
+  const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(' ');
+  const area = `M${px(0).toFixed(1)},${H} ${data.map((d, i) => `L${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(' ')} L${px(data.length - 1).toFixed(1)},${H} Z`;
+
+  return (
+    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+      <svg width={W} height={H} className="overflow-visible">
+        <path d={area} fill="rgba(255,255,255,0.1)" />
+        {handicapIndex != null && (
+          <line
+            x1={PAD} y1={py(handicapIndex).toFixed(1)}
+            x2={W - PAD} y2={py(handicapIndex).toFixed(1)}
+            stroke="rgba(255,255,255,0.45)" strokeWidth="1" strokeDasharray="3,3"
+          />
+        )}
+        <path d={line} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {data.map((d, i) => (
+          <circle
+            key={i}
+            cx={px(i).toFixed(1)} cy={py(d).toFixed(1)}
+            r={i === data.length - 1 ? 3.5 : 2}
+            fill="white"
+            opacity={i === data.length - 1 ? 1 : 0.55}
+          />
+        ))}
+      </svg>
+      <p className="text-green-300 text-[10px] font-medium tracking-wide">SCORE TREND</p>
+    </div>
+  );
+}
+
 export default function Dashboard({ rounds, courses, handicapIndex }) {
   const navigate = useNavigate();
   const recent = [...rounds].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
@@ -12,29 +66,32 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12">
-        <p className="text-green-100 text-sm font-medium">Golf Tracker</p>
-        <h1 className="text-white text-3xl font-bold mt-1">
-          {handicapIndex !== null ? handicapIndex.toFixed(1) : '—'}
-        </h1>
-        <p className="text-green-200 text-sm mt-0.5">Handicap Index (WHS)</p>
+      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-green-100 text-sm font-medium">Golf Tracker</p>
+          <h1 className="text-white text-3xl font-bold mt-1">
+            {handicapIndex !== null ? handicapIndex.toFixed(1) : '—'}
+          </h1>
+          <p className="text-green-200 text-sm mt-0.5">Handicap Index (WHS)</p>
 
-        {trend !== null && (
-          <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-            trend < 0 ? 'bg-green-700 text-green-100' :
-            trend > 0 ? 'bg-red-700 text-red-100' :
-            'bg-green-700 text-green-100'
-          }`}>
-            {trend < -0.3 ? <TrendingDown size={12} /> : trend > 0.3 ? <TrendingUp size={12} /> : <Minus size={12} />}
-            {trend < 0 ? `${Math.abs(trend).toFixed(1)} improving` : trend > 0 ? `${trend.toFixed(1)} higher` : 'Stable'}
-          </div>
-        )}
+          {trend !== null && (
+            <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+              trend < 0 ? 'bg-green-700 text-green-100' :
+              trend > 0 ? 'bg-red-700 text-red-100' :
+              'bg-green-700 text-green-100'
+            }`}>
+              {trend < -0.3 ? <TrendingDown size={12} /> : trend > 0.3 ? <TrendingUp size={12} /> : <Minus size={12} />}
+              {trend < 0 ? `${Math.abs(trend).toFixed(1)} improving` : trend > 0 ? `${trend.toFixed(1)} higher` : 'Stable'}
+            </div>
+          )}
 
-        {needed > 0 && (
-          <p className="text-green-200 text-sm mt-2">
-            {needed} more round{needed > 1 ? 's' : ''} needed to establish handicap
-          </p>
-        )}
+          {needed > 0 && (
+            <p className="text-green-200 text-sm mt-2">
+              {needed} more round{needed > 1 ? 's' : ''} needed to establish handicap
+            </p>
+          )}
+        </div>
+        <TrendSparkline rounds={rounds} handicapIndex={handicapIndex} />
       </div>
 
       {/* Quick actions */}

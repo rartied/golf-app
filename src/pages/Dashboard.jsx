@@ -12,9 +12,10 @@ function TrendSparkline({ rounds, handicapIndex }) {
 
   if (data.length < 2) return null;
 
-  const W = 130, H = 66, PAD = 5;
-  const iW = W - PAD * 2;
-  const iH = H - PAD * 2;
+  // Internal coordinate space — SVG scales to fill container via viewBox
+  const VW = 200, VH = 100, PAD = 8;
+  const iW = VW - PAD * 2;
+  const iH = VH - PAD * 2;
 
   const allVals = handicapIndex != null ? [...data, handicapIndex] : data;
   const lo = Math.min(...allVals);
@@ -28,31 +29,31 @@ function TrendSparkline({ rounds, handicapIndex }) {
   const py = v => PAD + (1 - (v - lo2) / span2) * iH;
 
   const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(' ');
-  const area = `M${px(0).toFixed(1)},${H} ${data.map((d, i) => `L${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(' ')} L${px(data.length - 1).toFixed(1)},${H} Z`;
+  const area = `M${px(0).toFixed(1)},${VH} ${data.map((d, i) => `L${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(' ')} L${px(data.length - 1).toFixed(1)},${VH} Z`;
 
   return (
-    <div className="flex flex-col items-center gap-1 flex-shrink-0">
-      <svg width={W} height={H} className="overflow-visible">
+    <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+      <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" className="overflow-visible">
         <path d={area} fill="rgba(255,255,255,0.1)" />
         {handicapIndex != null && (
           <line
             x1={PAD} y1={py(handicapIndex).toFixed(1)}
-            x2={W - PAD} y2={py(handicapIndex).toFixed(1)}
-            stroke="rgba(255,255,255,0.45)" strokeWidth="1" strokeDasharray="3,3"
+            x2={VW - PAD} y2={py(handicapIndex).toFixed(1)}
+            stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeDasharray="4,3"
           />
         )}
-        <path d={line} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={line} fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         {data.map((d, i) => (
           <circle
             key={i}
             cx={px(i).toFixed(1)} cy={py(d).toFixed(1)}
-            r={i === data.length - 1 ? 3.5 : 2}
+            r={i === data.length - 1 ? 4.5 : 2.5}
             fill="white"
             opacity={i === data.length - 1 ? 1 : 0.55}
           />
         ))}
       </svg>
-      <p className="text-green-300 text-[10px] font-medium tracking-wide">SCORE TREND</p>
+      <p className="text-green-300 text-[10px] font-medium tracking-wide text-right">SCORE TREND</p>
     </div>
   );
 }
@@ -66,8 +67,8 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-center justify-between gap-3">
-        <div>
+      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-center gap-4">
+        <div className="flex-shrink-0">
           <p className="text-green-100 text-sm font-medium">Golf Tracker</p>
           <h1 className="text-white text-3xl font-bold mt-1">
             {handicapIndex !== null ? handicapIndex.toFixed(1) : '—'}

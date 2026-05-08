@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { TrendingDown, TrendingUp, Minus, ChevronRight, Flag, Plus } from 'lucide-react';
+import { ChevronRight, Flag, Plus } from 'lucide-react';
 import { roundsNeededForHandicap, getHandicapTrend } from '../utils/handicap';
 
 function smoothCurve(pts) {
@@ -114,12 +114,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
           <p className="text-green-200 text-sm mt-0.5">Handicap Index (WHS)</p>
 
           {trend !== null && (
-            <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-              trend < 0 ? 'bg-green-700 text-green-100' :
-              trend > 0 ? 'bg-red-700 text-red-100' :
-              'bg-green-700 text-green-100'
-            }`}>
-              {trend < 0 ? <TrendingDown size={12} /> : trend > 0 ? <TrendingUp size={12} /> : <Minus size={12} />}
+            <div className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-green-700 text-green-100">
               {trend < 0 ? `↓ ${Math.abs(trend).toFixed(1)} since last round` : trend > 0 ? `↑ ${trend.toFixed(1)} since last round` : 'No change'}
             </div>
           )}

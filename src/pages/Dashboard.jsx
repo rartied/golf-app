@@ -65,7 +65,7 @@ function TrendSparkline({ rounds, handicapIndex }) {
               x2={VW - PAD} y2={py(handicapIndex).toFixed(1)}
               stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeDasharray="3,4"
             />
-            <text x={PAD + 2} y={py(handicapIndex) - 3} fill="rgba(255,255,255,0.45)" fontSize="7.5" fontWeight="600">
+            <text x={PAD + 5} y={py(handicapIndex) - 3} fill="rgba(255,255,255,0.45)" fontSize="7.5" fontWeight="600">
               HCP
             </text>
           </>

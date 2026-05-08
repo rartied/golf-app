@@ -54,7 +54,7 @@ function TrendSparkline({ rounds, handicapIndex }) {
     : latestRaw.toFixed(1);
 
   return (
-    <div className="w-[62%] flex-shrink-0 flex flex-col items-center justify-center gap-0.5">
+    <div className="w-[62%] flex-shrink-0 flex flex-col items-center justify-between">
       <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" className="overflow-visible">
 
         {/* Handicap index reference line */}
@@ -105,8 +105,8 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-center justify-between gap-4">
-        <div className="flex-shrink-0">
+      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-stretch justify-between gap-4">
+        <div className="flex-shrink-0 flex flex-col">
           <p className="text-green-100 text-sm font-medium">Golf Tracker</p>
           <h1 className="text-white text-3xl font-bold mt-1">
             {handicapIndex !== null ? handicapIndex.toFixed(1) : '—'}

@@ -3,17 +3,33 @@ import { format } from 'date-fns';
 import { TrendingDown, TrendingUp, Minus, ChevronRight, Flag, Plus } from 'lucide-react';
 import { roundsNeededForHandicap, getHandicapTrend } from '../utils/handicap';
 
+function smoothCurve(pts) {
+  if (pts.length < 2) return '';
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    const p0 = pts[i - 1], p1 = pts[i];
+    const cx = (p1.x - p0.x) / 2.5;
+    d += ` C${(p0.x + cx).toFixed(1)},${p0.y.toFixed(1)} ${(p1.x - cx).toFixed(1)},${p1.y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+  }
+  return d;
+}
+
 function TrendSparkline({ rounds, handicapIndex }) {
-  const data = [...rounds]
+  const raw = [...rounds]
     .filter(r => r.scoreDifferential != null)
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-20)
     .map(r => r.scoreDifferential);
 
-  if (data.length < 2) return null;
+  if (raw.length < 2) return null;
 
-  // Internal coordinate space — SVG scales to fill container via viewBox
-  const VW = 200, VH = 100, PAD = 8;
+  // 3-round trailing rolling average
+  const data = raw.map((_, i) => {
+    const slice = raw.slice(Math.max(0, i - 2), i + 1);
+    return slice.reduce((s, v) => s + v, 0) / slice.length;
+  });
+
+  const VW = 200, VH = 105, PAD = 10;
   const iW = VW - PAD * 2;
   const iH = VH - PAD * 2;
 
@@ -21,39 +37,67 @@ function TrendSparkline({ rounds, handicapIndex }) {
   const lo = Math.min(...allVals);
   const hi = Math.max(...allVals);
   const span = hi - lo || 1;
-  const lo2 = lo - span * 0.18;
-  const hi2 = hi + span * 0.18;
+  const lo2 = lo - span * 0.22;
+  const hi2 = hi + span * 0.22;
   const span2 = hi2 - lo2;
 
   const px = i => PAD + (i / (data.length - 1)) * iW;
   const py = v => PAD + (1 - (v - lo2) / span2) * iH;
 
-  const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(' ');
-  const area = `M${px(0).toFixed(1)},${VH} ${data.map((d, i) => `L${px(i).toFixed(1)},${py(d).toFixed(1)}`).join(' ')} L${px(data.length - 1).toFixed(1)},${VH} Z`;
+  const pts = data.map((d, i) => ({ x: px(i), y: py(d) }));
+  const linePath = smoothCurve(pts);
+  const last = pts[pts.length - 1];
+  const areaPath = `${linePath} L${last.x.toFixed(1)},${VH} L${pts[0].x.toFixed(1)},${VH} Z`;
+  const latestRaw = raw[raw.length - 1];
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+    <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
       <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" className="overflow-visible">
-        <path d={area} fill="rgba(255,255,255,0.1)" />
+        <defs>
+          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="white" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="white" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
+        {/* Gradient area */}
+        <path d={areaPath} fill="url(#trendFill)" />
+
+        {/* Handicap index reference line */}
         {handicapIndex != null && (
-          <line
-            x1={PAD} y1={py(handicapIndex).toFixed(1)}
-            x2={VW - PAD} y2={py(handicapIndex).toFixed(1)}
-            stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeDasharray="4,3"
-          />
+          <>
+            <line
+              x1={PAD} y1={py(handicapIndex).toFixed(1)}
+              x2={VW - PAD} y2={py(handicapIndex).toFixed(1)}
+              stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeDasharray="3,4"
+            />
+            <text x={PAD + 2} y={py(handicapIndex) - 3} fill="rgba(255,255,255,0.45)" fontSize="7.5" fontWeight="600">
+              HCP
+            </text>
+          </>
         )}
-        <path d={line} fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        {data.map((d, i) => (
-          <circle
-            key={i}
-            cx={px(i).toFixed(1)} cy={py(d).toFixed(1)}
-            r={i === data.length - 1 ? 4.5 : 2.5}
-            fill="white"
-            opacity={i === data.length - 1 ? 1 : 0.55}
-          />
-        ))}
+
+        {/* Smooth rolling-average line */}
+        <path d={linePath} fill="none" stroke="rgba(255,255,255,0.95)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Latest point — outer glow ring + filled dot */}
+        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="7" fill="rgba(255,255,255,0.15)" />
+        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="3.5" fill="white" />
+
+        {/* Latest differential label above the dot */}
+        <text
+          x={last.x.toFixed(1)} y={(last.y - 11).toFixed(1)}
+          textAnchor="middle" fill="white" fontSize="9.5" fontWeight="700"
+          opacity="0.9"
+        >
+          {latestRaw.toFixed(1)}
+        </text>
       </svg>
-      <p className="text-green-300 text-[10px] font-medium tracking-wide text-right">SCORE TREND</p>
+
+      <div className="flex items-center justify-between px-0.5">
+        <p className="text-white/30 text-[9px] font-semibold tracking-widest uppercase">3-rnd avg</p>
+        <p className="text-white/30 text-[9px] font-semibold tracking-widest uppercase">score diff</p>
+      </div>
     </div>
   );
 }

@@ -29,7 +29,7 @@ function TrendSparkline({ rounds, handicapIndex }) {
     return slice.reduce((s, v) => s + v, 0) / slice.length;
   });
 
-  const VW = 200, VH = 74, PAD = 10;
+  const VW = 200, VH = 84, PAD = 10;
   const iW = VW - PAD * 2;
   const iH = VH - PAD * 2;
 
@@ -86,12 +86,12 @@ function TrendSparkline({ rounds, handicapIndex }) {
         >
           {relLabel}
         </text>
-      </svg>
 
-      <div className="flex items-center justify-between px-0.5">
-        <p className="text-white/30 text-[9px] font-semibold tracking-widest uppercase">3-rnd avg</p>
-        <p className="text-white/30 text-[9px] font-semibold tracking-widest uppercase">score diff</p>
-      </div>
+        {/* Bottom label inside SVG */}
+        <text x={VW / 2} y={VH - 2} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600" letterSpacing="1">
+          3-RND AVG · SCORE DIFF
+        </text>
+      </svg>
     </div>
   );
 }

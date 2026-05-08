@@ -115,7 +115,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-center gap-4">
+      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-center justify-between gap-4">
         <div className="flex-shrink-0">
           <p className="text-green-100 text-sm font-medium">Golf Tracker</p>
           <h1 className="text-white text-3xl font-bold mt-1">

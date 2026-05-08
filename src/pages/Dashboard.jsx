@@ -55,7 +55,7 @@ function TrendSparkline({ rounds, handicapIndex }) {
     : latestRaw.toFixed(1);
 
   return (
-    <div className="w-[44%] flex-shrink-0 flex flex-col items-center justify-center gap-2">
+    <div className="w-[55%] flex-shrink-0 flex flex-col items-center justify-center gap-2">
       <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" className="overflow-visible">
         <defs>
           <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">

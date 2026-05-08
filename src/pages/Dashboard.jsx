@@ -29,7 +29,7 @@ function TrendSparkline({ rounds, handicapIndex }) {
     return slice.reduce((s, v) => s + v, 0) / slice.length;
   });
 
-  const VW = 200, VH = 105, PAD = 10;
+  const VW = 200, VH = 74, PAD = 10;
   const iW = VW - PAD * 2;
   const iH = VH - PAD * 2;
 

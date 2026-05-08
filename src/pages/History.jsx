@@ -2,13 +2,25 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ChevronRight, ChevronDown } from 'lucide-react';
+import { calcHandicapIndex } from '../utils/handicap';
 
 export default function History({ rounds }) {
   const navigate = useNavigate();
-  const [view, setView] = useState('all'); // 'all' | 'byCourse'
+  const [view, setView] = useState('all'); // 'all' | 'byCourse' | 'handicap'
   const [expanded, setExpanded] = useState({}); // courseKey -> bool
 
   const sorted = [...rounds].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Compute handicap index after each round chronologically
+  const handicapHistory = (() => {
+    const chron = [...rounds].sort((a, b) => new Date(a.date) - new Date(b.date));
+    return chron
+      .map((round, i) => ({
+        ...round,
+        handicapAfter: calcHandicapIndex(chron.slice(0, i + 1)),
+      }))
+      .reverse();
+  })();
 
   // Group by course, ordered by each course's most recent round
   const courseGroups = [];
@@ -54,6 +66,14 @@ export default function History({ rounds }) {
               >
                 By Course
               </button>
+              <button
+                onClick={() => setView('handicap')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  view === 'handicap' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                }`}
+              >
+                Handicap
+              </button>
             </div>
           )}
         </div>
@@ -66,6 +86,47 @@ export default function History({ rounds }) {
             <p className="text-gray-600 font-medium">No rounds yet</p>
             <p className="text-gray-400 text-sm mt-1">Play a round to see your history</p>
           </div>
+        ) : view === 'handicap' ? (
+          handicapHistory.map((round, i) => {
+            const prev = handicapHistory[i + 1];
+            const delta = prev?.handicapAfter != null && round.handicapAfter != null
+              ? round.handicapAfter - prev.handicapAfter
+              : null;
+            return (
+              <div key={round.id} className="bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3">
+                <div className="flex-shrink-0 text-center w-12">
+                  <p className="text-xs text-gray-400 font-medium uppercase">
+                    {format(new Date(round.date + 'T00:00:00'), 'MMM')}
+                  </p>
+                  <p className="text-xl font-black text-gray-900 leading-tight">
+                    {format(new Date(round.date + 'T00:00:00'), 'd')}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {format(new Date(round.date + 'T00:00:00'), 'yyyy')}
+                  </p>
+                </div>
+                <div className="w-px h-10 bg-gray-100 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm truncate">{round.courseName}</p>
+                  {round.teeName && <p className="text-gray-400 text-xs mt-0.5">{round.teeName}</p>}
+                </div>
+                <div className="text-right flex-shrink-0">
+                  {round.handicapAfter != null ? (
+                    <>
+                      <p className="text-xl font-black text-gray-900">{round.handicapAfter.toFixed(1)}</p>
+                      {delta != null && (
+                        <p className={`text-xs font-semibold ${delta < 0 ? 'text-green-600' : delta > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {delta < 0 ? delta.toFixed(1) : delta > 0 ? `+${delta.toFixed(1)}` : '—'}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-300">—</p>
+                  )}
+                </div>
+              </div>
+            );
+          })
         ) : view === 'all' ? (
           sorted.map(round => <RoundRow key={round.id} round={round} navigate={navigate} />)
         ) : (

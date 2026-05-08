@@ -71,12 +71,9 @@ export function roundsNeededForHandicap(rounds) {
 }
 
 export function getHandicapTrend(rounds) {
-  if (rounds.length < 6) return null;
   const sorted = [...rounds].sort((a, b) => new Date(b.date + 'T00:00:00') - new Date(a.date + 'T00:00:00'));
-  const recent5 = sorted.slice(0, 5).map(r => r.scoreDifferential);
-  const prev5 = sorted.slice(5, 10).map(r => r.scoreDifferential);
-  if (prev5.length < 3) return null;
-  const avgRecent = recent5.reduce((s, d) => s + d, 0) / recent5.length;
-  const avgPrev = prev5.reduce((s, d) => s + d, 0) / prev5.length;
-  return avgRecent - avgPrev; // negative = improving
+  const current = calcHandicapIndex(sorted);
+  const previous = calcHandicapIndex(sorted.slice(1));
+  if (current === null || previous === null) return null;
+  return parseFloat((current - previous).toFixed(1)); // negative = improved
 }

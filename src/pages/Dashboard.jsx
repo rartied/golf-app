@@ -119,8 +119,8 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
               trend > 0 ? 'bg-red-700 text-red-100' :
               'bg-green-700 text-green-100'
             }`}>
-              {trend < -0.3 ? <TrendingDown size={12} /> : trend > 0.3 ? <TrendingUp size={12} /> : <Minus size={12} />}
-              {trend < 0 ? `${Math.abs(trend).toFixed(1)} improving` : trend > 0 ? `${trend.toFixed(1)} higher` : 'Stable'}
+              {trend < 0 ? <TrendingDown size={12} /> : trend > 0 ? <TrendingUp size={12} /> : <Minus size={12} />}
+              {trend < 0 ? `↓ ${Math.abs(trend).toFixed(1)} since last round` : trend > 0 ? `↑ ${trend.toFixed(1)} since last round` : 'No change'}
             </div>
           )}
 

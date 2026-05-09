@@ -23,15 +23,15 @@ function TrendSparkline({ rounds, handicapIndex }) {
 
   if (raw.length < 2) return null;
 
-  // 3-round trailing rolling average
   const data = raw.map((_, i) => {
     const slice = raw.slice(Math.max(0, i - 2), i + 1);
     return slice.reduce((s, v) => s + v, 0) / slice.length;
   });
 
-  const VW = 200, VH = 84, PAD = 10;
-  const iW = VW - PAD * 2;
-  const iH = VH - PAD * 2;
+  // Wide viewBox — extra right padding keeps the label well inside the right fade
+  const VW = 300, VH = 80, PAD_L = 8, PAD_R = 36, PAD_T = 16, PAD_B = 14;
+  const iW = VW - PAD_L - PAD_R;
+  const iH = VH - PAD_T - PAD_B;
 
   const allVals = handicapIndex != null ? [...data, handicapIndex] : data;
   const lo = Math.min(...allVals);
@@ -41,8 +41,8 @@ function TrendSparkline({ rounds, handicapIndex }) {
   const hi2 = hi + span * 0.22;
   const span2 = hi2 - lo2;
 
-  const px = i => PAD + (i / (data.length - 1)) * iW;
-  const py = v => PAD + (1 - (v - lo2) / span2) * iH;
+  const px = i => PAD_L + (i / (data.length - 1)) * iW;
+  const py = v => PAD_T + (1 - (v - lo2) / span2) * iH;
 
   const pts = data.map((d, i) => ({ x: px(i), y: py(d) }));
   const linePath = smoothCurve(pts);
@@ -54,42 +54,38 @@ function TrendSparkline({ rounds, handicapIndex }) {
     : latestRaw.toFixed(1);
 
   return (
-    <div className="w-[62%] flex-shrink-0 flex flex-col items-center justify-center gap-0.5">
-      <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" className="overflow-visible">
+    <div className="absolute inset-0 flex items-center">
+      <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="none">
 
-        {/* Handicap index reference line */}
         {handicapIndex != null && (
           <>
             <line
-              x1={PAD} y1={py(handicapIndex).toFixed(1)}
-              x2={VW - PAD} y2={py(handicapIndex).toFixed(1)}
-              stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeDasharray="3,4"
+              x1={PAD_L} y1={py(handicapIndex).toFixed(1)}
+              x2={VW - PAD_R} y2={py(handicapIndex).toFixed(1)}
+              stroke="rgba(255,255,255,0.25)" strokeWidth="1" strokeDasharray="3,4"
             />
-            <text x={PAD + 5} y={py(handicapIndex) - 3} fill="rgba(255,255,255,0.45)" fontSize="7.5" fontWeight="600">
+            <text x={PAD_L + 5} y={(py(handicapIndex) - 3).toFixed(1)} fill="rgba(255,255,255,0.35)" fontSize="7" fontWeight="600">
               HCP
+            </text>
+            <text
+              x={VW - PAD_R - 3} y={(py(handicapIndex ?? lo2) + 10).toFixed(1)}
+              textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="6.5" fontWeight="600" letterSpacing="1"
+            >
+              3-RND AVG · SCORE DIFF
             </text>
           </>
         )}
 
-        {/* Smooth rolling-average line */}
-        <path d={linePath} fill="none" stroke="rgba(255,255,255,0.95)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Latest point — outer glow ring + filled dot */}
-        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="7" fill="rgba(255,255,255,0.15)" />
-        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="3.5" fill="white" />
+        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="6" fill="rgba(255,255,255,0.15)" />
+        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="3" fill="white" />
 
-        {/* Latest value label — score vs handicap */}
         <text
-          x={last.x.toFixed(1)} y={(last.y - 11).toFixed(1)}
-          textAnchor="middle" fill="white" fontSize="9.5" fontWeight="700"
-          opacity="0.9"
+          x={last.x.toFixed(1)} y={(last.y - 10).toFixed(1)}
+          textAnchor="middle" fill="white" fontSize="9" fontWeight="700" opacity="0.9"
         >
           {relLabel}
-        </text>
-
-        {/* Label sits just below the HCP reference line */}
-        <text x={VW / 2} y={(py(handicapIndex ?? lo2) + 11).toFixed(1)} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600" letterSpacing="1">
-          3-RND AVG · SCORE DIFF
         </text>
       </svg>
     </div>
@@ -105,8 +101,20 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 flex items-center justify-between gap-4">
-        <div className="flex-shrink-0 flex flex-col items-center">
+      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 relative overflow-hidden">
+        {/* Full-width chart behind everything */}
+        <TrendSparkline rounds={rounds} handicapIndex={handicapIndex} />
+
+        {/* Left fade — keeps text readable */}
+        <div className="absolute inset-y-0 left-0 w-3/5 pointer-events-none z-10"
+          style={{ background: 'linear-gradient(to right, #16a34a 42%, rgba(22,163,74,0.7) 62%, transparent)' }} />
+
+        {/* Right fade — softens right edge so label isn't hard-clipped */}
+        <div className="absolute inset-y-0 right-0 w-[14%] pointer-events-none z-10"
+          style={{ background: 'linear-gradient(to left, #16a34a, transparent)' }} />
+
+        {/* Text on top */}
+        <div className="relative z-20 flex flex-col items-start">
           <h1 className="text-white text-5xl font-bold">
             {handicapIndex !== null ? handicapIndex.toFixed(1) : '—'}
           </h1>
@@ -124,7 +132,6 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
             </p>
           )}
         </div>
-        <TrendSparkline rounds={rounds} handicapIndex={handicapIndex} />
       </div>
 
       {/* Quick actions */}

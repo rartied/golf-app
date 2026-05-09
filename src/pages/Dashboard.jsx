@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight, Flag, Plus } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { roundsNeededForHandicap, getHandicapTrend } from '../utils/handicap';
 
 function smoothCurve(pts) {
@@ -28,8 +28,7 @@ function TrendSparkline({ rounds, handicapIndex }) {
     return slice.reduce((s, v) => s + v, 0) / slice.length;
   });
 
-  // Wide viewBox — extra right padding keeps the label well inside the right fade
-  const VW = 300, VH = 80, PAD_L = 8, PAD_R = 36, PAD_T = 16, PAD_B = 14;
+  const VW = 300, VH = 80, PAD_L = 8, PAD_R = 18, PAD_T = 16, PAD_B = 14;
   const iW = VW - PAD_L - PAD_R;
   const iH = VH - PAD_T - PAD_B;
 
@@ -106,12 +105,8 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
         <TrendSparkline rounds={rounds} handicapIndex={handicapIndex} />
 
         {/* Left fade — keeps text readable */}
-        <div className="absolute inset-y-0 left-0 w-3/5 pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to right, #16a34a 42%, rgba(22,163,74,0.7) 62%, transparent)' }} />
-
-        {/* Right fade — softens right edge so label isn't hard-clipped */}
-        <div className="absolute inset-y-0 right-0 w-[14%] pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to left, #16a34a, transparent)' }} />
+        <div className="absolute inset-y-0 left-0 w-[50%] pointer-events-none z-10"
+          style={{ background: 'linear-gradient(to right, #16a34a 30%, rgba(22,163,74,0.7) 50%, transparent)' }} />
 
         {/* Text on top */}
         <div className="relative z-20 flex flex-col items-start">
@@ -132,19 +127,6 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
             </p>
           )}
         </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="px-4 -mt-4">
-        <button
-          onClick={() => navigate('/play')}
-          className="w-full bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3 active:scale-95 transition-transform"
-        >
-          <div className="w-10 h-10 bg-golf-light rounded-full flex items-center justify-center flex-shrink-0">
-            <Flag size={20} className="text-golf-green" />
-          </div>
-          <span className="text-sm font-semibold text-gray-800">Log Score</span>
-        </button>
       </div>
 
       {/* Stats strip */}

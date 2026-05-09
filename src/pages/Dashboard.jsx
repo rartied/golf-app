@@ -105,8 +105,8 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
         <TrendSparkline rounds={rounds} handicapIndex={handicapIndex} />
 
         {/* Left fade — keeps text readable */}
-        <div className="absolute inset-y-0 left-0 w-[60%] pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to right, #16a34a 70%, transparent)' }} />
+        <div className="absolute inset-y-0 left-0 w-[55%] pointer-events-none z-10"
+          style={{ background: 'linear-gradient(to right, #16a34a 50%, transparent)' }} />
 
         {/* Text on top */}
         <div className="relative z-20 flex flex-col items-start">

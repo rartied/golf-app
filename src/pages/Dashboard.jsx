@@ -139,21 +139,18 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
           <div className="text-center px-4">
             <p className="text-2xl font-bold text-gray-900">
               {rounds.length > 0
-                ? (rounds.reduce((s, r) => s + (r.totalScore - r.coursePar), 0) / rounds.length > 0 ? '+' : '')
-                  + (rounds.reduce((s, r) => s + (r.totalScore - r.coursePar), 0) / rounds.length).toFixed(1)
+                ? (rounds.reduce((s, r) => s + r.scoreDifferential, 0) / rounds.length).toFixed(1)
                 : '—'}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">Avg vs Par</p>
+            <p className="text-xs text-gray-500 mt-0.5">Avg Diff</p>
           </div>
           <div className="text-center pl-4">
             <p className="text-2xl font-bold text-gray-900">
               {rounds.length > 0
-                ? Math.min(...rounds.map(r => r.totalScore - r.coursePar)) >= 0
-                  ? '+' + Math.min(...rounds.map(r => r.totalScore - r.coursePar))
-                  : Math.min(...rounds.map(r => r.totalScore - r.coursePar))
+                ? Math.min(...rounds.map(r => r.scoreDifferential)).toFixed(1)
                 : '—'}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">Best Score</p>
+            <p className="text-xs text-gray-500 mt-0.5">Best Diff</p>
           </div>
         </div>
       )}
@@ -200,6 +197,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
                     <p className="font-semibold text-gray-900 text-sm truncate">{round.courseName}</p>
                     <p className="text-gray-400 text-xs mt-0.5">
                       {format(new Date(round.date), 'MMM d, yyyy')} · {round.teeName}
+                      {round.nineHoleType && ` · ${round.nineHoleType === 'front' ? 'Front 9' : 'Back 9'}`}
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">

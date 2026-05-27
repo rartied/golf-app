@@ -78,7 +78,7 @@ function DirectionPicker({ label, value, onChange, hasLongShort = false }) {
 
   return (
     <div className="flex-1 flex flex-col items-center">
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
       <div className="relative" style={{ width: DP_S, height: DP_S }}>
         <svg width={DP_S} height={DP_S} className="absolute inset-0">
           {sectors.map(({ v, a1, a2 }) => (
@@ -529,13 +529,13 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+        <div className="flex-1 overflow-y-auto px-3 py-1.5 space-y-1.5">
 
           {/* Score + Putts */}
           <div className="bg-white rounded-2xl shadow-sm px-4 py-2">
             {/* Hole info */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-3xl font-black text-gray-900 leading-none">{hole.number}</span>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-2xl font-black text-gray-900 leading-none">{hole.number}</span>
               <span className="px-2 py-0.5 bg-golf-light text-golf-green text-xs font-bold rounded-full">Par {hole.par}</span>
               {hole.strokeIndex && (
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">SI {hole.strokeIndex}</span>
@@ -549,48 +549,48 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             <div className="flex items-stretch gap-4">
               {/* Score */}
               <div className="flex-1 flex flex-col items-center">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Score</p>
-                <div className="flex items-center gap-3">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Score</p>
+                <div className="flex items-center gap-2">
                   <button
                     onPointerDown={() => adjustScore(currentHole, -1)}
-                    className="w-11 h-11 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
+                    className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
                   >−</button>
                   <div className="text-center w-12">
                     <p className="text-5xl font-black text-gray-900 tabular-nums leading-none">{hole.score}</p>
                   </div>
                   <button
                     onPointerDown={() => adjustScore(currentHole, 1)}
-                    className="w-11 h-11 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
+                    className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
                   >+</button>
                 </div>
-                <p className={`text-xs font-semibold mt-2 ${rel.color}`}>{rel.label}</p>
+                <p className={`text-xs font-semibold mt-1 ${rel.color}`}>{rel.label}</p>
               </div>
 
               <div className="w-px bg-gray-100" />
 
               {/* Putts */}
               <div className="flex-1 flex flex-col items-center">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Putts</p>
-                <div className="flex items-center gap-3">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Putts</p>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => updateHoleStat(currentHole, 'putts', Math.max(0, (hole.putts ?? 0) - 1))}
-                    className="w-11 h-11 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
+                    className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
                   >−</button>
                   <div className="text-center w-12">
                     <p className="text-5xl font-black text-gray-900 tabular-nums leading-none">{hole.putts ?? 0}</p>
                   </div>
                   <button
                     onClick={() => updateHoleStat(currentHole, 'putts', (hole.putts ?? 0) + 1)}
-                    className="w-11 h-11 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
+                    className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
                   >+</button>
                 </div>
-                <p className="text-xs font-semibold mt-2 text-gray-300">putts</p>
+                <p className="text-xs font-semibold mt-1 text-gray-300">putts</p>
               </div>
             </div>
           </div>
 
           {/* Direction pickers */}
-          <div className="bg-white rounded-2xl shadow-sm px-4 py-3">
+          <div className="bg-white rounded-2xl shadow-sm px-4 py-2">
             <div className="flex items-center gap-2">
               {hole.par !== 3 ? (
                 <DirectionPicker
@@ -616,10 +616,10 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           </div>
 
           {/* Bunkers + Penalties */}
-          <div className="bg-white rounded-2xl shadow-sm px-4 py-3 space-y-3">
+          <div className="bg-white rounded-2xl shadow-sm px-4 py-2 space-y-2">
             {/* Bunkers row */}
             <div>
-              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-3">Bunkers</p>
+              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Bunkers</p>
               <div className="flex justify-around">
                 <TapCounter label="FW Bunker" value={hole.fairwayBunkers} onChange={v => updateHoleStat(currentHole, 'fairwayBunkers', v)} />
                 <TapCounter label="GS Bunker" value={hole.greensideBunkers} onChange={v => updateHoleStat(currentHole, 'greensideBunkers', v)} />
@@ -628,7 +628,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             <div className="border-t border-gray-100" />
             {/* Penalties row */}
             <div>
-              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-3">Penalties</p>
+              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Penalties</p>
               <div className="flex justify-around">
                 <TapCounter label="Water" value={hole.waterHazards} onChange={v => updateHoleStat(currentHole, 'waterHazards', v)} />
                 <TapCounter label="OB" value={hole.outOfBounds} onChange={v => updateHoleStat(currentHole, 'outOfBounds', v)} />
@@ -640,7 +640,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         </div>
 
         {/* Navigation */}
-        <div className="px-4 pt-2 pb-4 safe-pb flex-shrink-0 bg-gray-50">
+        <div className="px-4 pt-1 pb-3 safe-pb flex-shrink-0 bg-gray-50">
           <div className="flex gap-3">
             {currentHole > 0 ? (
               <button

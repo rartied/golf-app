@@ -9,6 +9,7 @@ import RoundDetail from './pages/RoundDetail'
 import Courses from './pages/Courses'
 import AddCourse from './pages/AddCourse'
 import StrokeCard from './pages/StrokeCard'
+import Stats from './pages/Stats'
 
 function LoadingScreen() {
   return (
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/courses/add" element={<AddCourse {...data} />} />
         <Route path="/courses/:courseId" element={<AddCourse {...data} />} />
         <Route path="/strokes" element={<StrokeCard {...data} />} />
+        <Route path="/stats" element={<Stats {...data} />} />
       </Routes>
       {location.pathname !== '/play' && <Navigation />}
     </>

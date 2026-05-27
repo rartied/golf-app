@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronRight, Plus } from 'lucide-react';
+import { ChevronRight, Plus, BarChart2 } from 'lucide-react';
 import { roundsNeededForHandicap, getHandicapTrend } from '../utils/handicap';
+import { computeRoundStats } from '../utils/roundStats';
 
 function smoothCurve(pts) {
   if (pts.length < 2) return '';
@@ -154,6 +155,50 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
           </div>
         </div>
       )}
+
+      {/* Stats snapshot */}
+      {rounds.some(r => r.holeScores?.length >= 9) && (() => {
+        const enriched = rounds
+          .filter(r => r.holeScores?.length >= 9)
+          .map(r => ({ ...r, stats: computeRoundStats(r.holeScores) }))
+          .filter(r => r.stats.hasData);
+        if (!enriched.length) return null;
+        function avg(arr, fn) {
+          return arr.length ? arr.reduce((s, r) => s + fn(r), 0) / arr.length : null;
+        }
+        const withPutts   = enriched.filter(r => r.stats.puttHoles > 0);
+        const withGreen   = enriched.filter(r => r.stats.greensAttempts > 0);
+        const withFairway = enriched.filter(r => r.stats.fairwayAttempts > 0);
+        const avgPutts = avg(withPutts, r => r.stats.totalPutts);
+        const avgGIR   = avg(withGreen, r => (r.stats.girCount / r.stats.greensAttempts) * 100);
+        const avgFW    = avg(withFairway, r => (r.stats.fairwaysHit / r.stats.fairwayAttempts) * 100);
+        const items = [
+          avgPutts != null && { label: 'Putts/Rnd', value: avgPutts.toFixed(1) },
+          avgGIR   != null && { label: 'GIR',       value: `${avgGIR.toFixed(0)}%` },
+          avgFW    != null && { label: 'Fairways',  value: `${avgFW.toFixed(0)}%` },
+        ].filter(Boolean);
+        return (
+          <div className="mx-4 mt-4">
+            <button
+              onClick={() => navigate('/stats')}
+              className="w-full bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors"
+            >
+              <BarChart2 size={18} className="text-golf-green flex-shrink-0" />
+              <div className="flex-1 flex gap-4">
+                {items.map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-xs text-gray-400">{label}</p>
+                    <p className="text-base font-bold text-gray-900">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-1 text-golf-green text-xs font-semibold flex-shrink-0">
+                Stats <ChevronRight size={14} />
+              </div>
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Recent rounds */}
       <div className="px-4 mt-4">

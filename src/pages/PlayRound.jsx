@@ -38,21 +38,26 @@ function teeColorHex(color) {
   return map[color] ?? '#9ca3af';
 }
 
-function buildHoleScores(course, tee) {
+function buildHoleScores(course, tee, nineHoleType) {
+  let holes;
   if (course.holes?.length === 18) {
-    return course.holes.map(h => ({
+    holes = course.holes.map(h => ({
       number: h.number,
       par: h.par,
       strokeIndex: h.strokeIndex,
       score: h.par,
     }));
+  } else {
+    holes = Array.from({ length: 18 }, (_, i) => ({
+      number: i + 1,
+      par: 4,
+      strokeIndex: i + 1,
+      score: 4,
+    }));
   }
-  return Array.from({ length: 18 }, (_, i) => ({
-    number: i + 1,
-    par: 4,
-    strokeIndex: i + 1,
-    score: 4,
-  }));
+  if (nineHoleType === 'front') return holes.slice(0, 9);
+  if (nineHoleType === 'back') return holes.slice(9);
+  return holes;
 }
 
 export default function PlayRound({ courses, handicapIndex, addRound }) {
@@ -66,6 +71,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   const [currentHole, setCurrentHole] = useState(0);
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [courseSearch, setCourseSearch] = useState('');
+  const [nineHoleType, setNineHoleType] = useState(null); // null = full 18, 'front', 'back'
 
   useEffect(() => {
     const saved = storage.getActiveRound();
@@ -90,6 +96,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
       date,
       holeScores,
       currentHole,
+      nineHoleType,
+      holesPlayed: nineHoleType ? 9 : 18,
     });
   }, [phase, holeScores, currentHole, selectedCourse, selectedTee, date]);
 
@@ -103,6 +111,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
     setSelectedTee(tee);
     setHoleScores(s.holeScores);
     setCurrentHole(s.currentHole);
+    setNineHoleType(s.nineHoleType ?? null);
     setPhase('scoring');
   }
 
@@ -113,7 +122,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   }
 
   function handleStart() {
-    setHoleScores(buildHoleScores(selectedCourse, selectedTee));
+    setHoleScores(buildHoleScores(selectedCourse, selectedTee, nineHoleType));
     setCurrentHole(0);
     setPhase('scoring');
   }
@@ -126,15 +135,16 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   }
 
   function handleSave() {
+    const holesPlayed = nineHoleType ? 9 : 18;
     const totalScore = holeScores.reduce((s, h) => s + h.score, 0);
-    const coursePar = selectedTee.par;
+    const coursePar = holeScores.reduce((s, h) => s + h.par, 0);
     const courseHandicap = handicapIndex !== null
       ? calcCourseHandicap(handicapIndex, selectedTee.slope, selectedTee.rating, selectedTee.par)
       : null;
     const adjustedGrossScore = courseHandicap !== null
-      ? calcAdjustedGrossScore(holeScores, courseHandicap)
+      ? calcAdjustedGrossScore(holeScores, courseHandicap, holesPlayed)
       : totalScore;
-    const scoreDifferential = calcScoreDifferential(adjustedGrossScore, selectedTee.rating, selectedTee.slope);
+    const scoreDifferential = calcScoreDifferential(adjustedGrossScore, selectedTee.rating, selectedTee.slope, holesPlayed, handicapIndex);
 
     addRound({
       id: uuid(),
@@ -150,6 +160,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
       adjustedGrossScore,
       scoreDifferential,
       holeScores,
+      holesPlayed,
+      nineHoleType,
     });
     storage.clearActiveRound();
     navigate('/');
@@ -181,7 +193,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
               {savedRound.courseName} · {savedRound.teeName}
             </p>
             <p className="text-gray-400 text-xs mt-1">
-              Hole {savedRound.currentHole + 1} of 18
+              Hole {savedRound.currentHole + 1} of {savedRound.holesPlayed ?? 18}
             </p>
           </div>
           <div className="w-full space-y-3">
@@ -269,7 +281,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                 ).map(course => (
                   <button
                     key={course.id}
-                    onClick={() => { setSelectedCourse(course); setSelectedTee(null); }}
+                    onClick={() => { setSelectedCourse(course); setSelectedTee(null); setNineHoleType(null); }}
                     className={`w-full text-left bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 transition-all ${
                       selectedCourse?.id === course.id ? 'ring-2 ring-golf-green' : ''
                     }`}
@@ -328,6 +340,33 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                         </svg>
                       </div>
                     )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {selectedCourse && selectedTee && (
+            <div>
+              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
+                Holes to Play
+              </h2>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Full 18', value: null },
+                  { label: 'Front 9', value: 'front' },
+                  { label: 'Back 9', value: 'back' },
+                ].map(({ label, value }) => (
+                  <button
+                    key={label}
+                    onClick={() => setNineHoleType(value)}
+                    className={`py-3 rounded-2xl text-sm font-semibold transition-colors ${
+                      nineHoleType === value
+                        ? 'bg-golf-green text-white'
+                        : 'bg-white text-gray-600 shadow-sm'
+                    }`}
+                  >
+                    {label}
                   </button>
                 ))}
               </div>
@@ -456,7 +495,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
               <div className="flex-1" />
             )}
 
-            {currentHole < 17 ? (
+            {currentHole < holeScores.length - 1 ? (
               <button
                 onClick={() => setCurrentHole(h => h + 1)}
                 className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-1 active:opacity-90"
@@ -473,7 +512,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             )}
           </div>
 
-          {currentHole < 17 && (
+          {currentHole < holeScores.length - 1 && (
             <button
               onClick={() => setPhase('summary')}
               className="w-full text-center text-gray-400 text-sm py-1"
@@ -487,16 +526,17 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   }
 
   // ── SUMMARY ────────────────────────────────────────────────────────────────
+  const holesPlayed = nineHoleType ? 9 : 18;
   const totalScore = holeScores.reduce((s, h) => s + h.score, 0);
-  const coursePar = selectedTee.par;
+  const coursePar = holeScores.reduce((s, h) => s + h.par, 0);
   const diff = totalScore - coursePar;
   const courseHandicap = handicapIndex !== null
     ? calcCourseHandicap(handicapIndex, selectedTee.slope, selectedTee.rating, selectedTee.par)
     : null;
   const adjustedGrossScore = courseHandicap !== null
-    ? calcAdjustedGrossScore(holeScores, courseHandicap)
+    ? calcAdjustedGrossScore(holeScores, courseHandicap, holesPlayed)
     : totalScore;
-  const scoreDifferential = calcScoreDifferential(adjustedGrossScore, selectedTee.rating, selectedTee.slope);
+  const scoreDifferential = calcScoreDifferential(adjustedGrossScore, selectedTee.rating, selectedTee.slope, holesPlayed, handicapIndex);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -511,6 +551,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         </p>
         <p className="text-green-200 text-sm mt-2">
           {selectedCourse.name} · {selectedTee.name}
+          {nineHoleType && ` · ${nineHoleType === 'front' ? 'Front 9' : 'Back 9'}`}
         </p>
       </div>
 
@@ -521,7 +562,11 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             ['Gross Score', totalScore],
             ['Course Par', coursePar],
             ...(adjustedGrossScore !== totalScore ? [['Adjusted Gross', adjustedGrossScore]] : []),
-            ['Score Differential', scoreDifferential.toFixed(1)],
+            ...(holesPlayed === 9 && handicapIndex !== null ? [
+              ['9-Hole Differential', parseFloat(((adjustedGrossScore - selectedTee.rating / 2) * 113 / selectedTee.slope).toFixed(1)).toFixed(1)],
+              [`Expected (HI ${handicapIndex.toFixed(1)})`, parseFloat((handicapIndex / 2 + 1.5).toFixed(1)).toFixed(1)],
+            ] : []),
+            [holesPlayed === 9 && handicapIndex !== null ? '18-Hole Equivalent' : 'Score Differential', scoreDifferential.toFixed(1)],
             ['Rating / Slope', `${selectedTee.rating} / ${selectedTee.slope}`],
           ].map(([label, value]) => (
             <div key={label} className="px-4 py-3 flex justify-between items-center">
@@ -534,7 +579,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         {/* Scorecard */}
         <div className="bg-white rounded-2xl shadow-sm p-4 overflow-x-auto">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Scorecard</h3>
-          {[holeScores.slice(0, 9), holeScores.slice(9)].map((nine, nineIdx) => (
+          {(holesPlayed === 9 ? [holeScores] : [holeScores.slice(0, 9), holeScores.slice(9)]).map((nine, nineIdx) => (
             <div key={nineIdx} className="mb-3 last:mb-0">
               <div className="grid text-xs text-center" style={{ gridTemplateColumns: `3rem repeat(9, 1fr)` }}>
                 <div className="text-left text-gray-400 font-medium py-0.5">Hole</div>
@@ -554,7 +599,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                   );
                 })}
               </div>
-              {nineIdx === 0 && <div className="border-t border-gray-100 my-2" />}
+              {nineIdx === 0 && holesPlayed === 18 && <div className="border-t border-gray-100 my-2" />}
             </div>
           ))}
         </div>

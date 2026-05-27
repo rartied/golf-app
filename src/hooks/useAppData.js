@@ -18,6 +18,8 @@ function rowToRound(row) {
     adjustedGrossScore: row.adjusted_gross_score,
     scoreDifferential: row.score_differential,
     holeScores: row.hole_scores ?? [],
+    holesPlayed: row.holes_played ?? 18,
+    nineHoleType: row.nine_hole_type ?? null,
   };
 }
 
@@ -36,6 +38,8 @@ function roundToRow(round) {
     adjusted_gross_score: round.adjustedGrossScore,
     score_differential: round.scoreDifferential,
     hole_scores: round.holeScores ?? [],
+    holes_played: round.holesPlayed ?? 18,
+    nine_hole_type: round.nineHoleType ?? null,
   };
 }
 

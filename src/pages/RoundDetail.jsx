@@ -23,7 +23,8 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
     );
   }
 
-  const hasHoleScores = round.holeScores?.length === 18;
+  const hasHoleScores = (round.holeScores?.length ?? 0) >= 9;
+  const isNineHole = (round.holesPlayed ?? 18) === 9;
 
   function startEdit() {
     setEditDate(round.date);
@@ -48,7 +49,8 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
       ? editScores.reduce((s, h) => s + h.score, 0)
       : editTotal;
 
-    const courseHandicap = handicapIndex !== null
+    // For 9-hole rounds, skip AGS cap (course par stored is 9-hole, can't derive 18-hole par for calcCourseHandicap)
+    const courseHandicap = (!isNineHole && handicapIndex !== null)
       ? calcCourseHandicap(handicapIndex, round.slope, round.courseRating, round.coursePar)
       : null;
 
@@ -57,7 +59,8 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
       : totalScore;
 
     const scoreDifferential = calcScoreDifferential(
-      adjustedGrossScore, round.courseRating, round.slope
+      adjustedGrossScore, round.courseRating, round.slope, round.holesPlayed ?? 18,
+      isNineHole ? handicapIndex : null
     );
 
     updateRound({
@@ -184,14 +187,16 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
         {editing && hasHoleScores && (
           <div className="bg-white rounded-2xl shadow-sm p-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Edit Scores</p>
-            {[editScores.slice(0, 9), editScores.slice(9)].map((nine, nineIdx) => (
+            {(isNineHole ? [editScores] : [editScores.slice(0, 9), editScores.slice(9)]).map((nine, nineIdx) => (
               <div key={nineIdx}>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest py-2">
-                  {nineIdx === 0 ? 'Front 9' : 'Back 9'}
-                </p>
+                {!isNineHole && (
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest py-2">
+                    {nineIdx === 0 ? 'Front 9' : 'Back 9'}
+                  </p>
+                )}
                 <div className="space-y-1">
                   {nine.map((h, rel) => {
-                    const idx = nineIdx * 9 + rel;
+                    const idx = isNineHole ? rel : nineIdx * 9 + rel;
                     const d = h.score - h.par;
                     return (
                       <div key={h.number} className="flex items-center gap-3 py-1">
@@ -216,7 +221,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
                     );
                   })}
                 </div>
-                {nineIdx === 0 && <div className="border-t border-gray-100 my-2" />}
+                {nineIdx === 0 && !isNineHole && <div className="border-t border-gray-100 my-2" />}
               </div>
             ))}
           </div>
@@ -226,7 +231,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
         {!editing && hasHoleScores && (
           <div className="bg-white rounded-2xl shadow-sm p-4 overflow-x-auto">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Scorecard</h3>
-            {[round.holeScores.slice(0, 9), round.holeScores.slice(9)].map((nine, nineIdx) => (
+            {(isNineHole ? [round.holeScores] : [round.holeScores.slice(0, 9), round.holeScores.slice(9)]).map((nine, nineIdx) => (
               <div key={nineIdx} className="mb-2 last:mb-0">
                 <div className="grid text-xs text-center" style={{ gridTemplateColumns: `3rem repeat(9, 1fr)` }}>
                   <div className="text-left text-gray-400 font-medium py-0.5">Hole</div>
@@ -246,19 +251,21 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
                     );
                   })}
                 </div>
-                {nineIdx === 0 && <div className="border-t border-gray-100 my-2" />}
+                {nineIdx === 0 && !isNineHole && <div className="border-t border-gray-100 my-2" />}
               </div>
             ))}
-            <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between text-sm">
-              <span className="text-gray-500">Out / In / Total</span>
-              <span className="font-bold text-gray-900">
-                {round.holeScores.slice(0, 9).reduce((s, h) => s + h.score, 0)}
-                {' / '}
-                {round.holeScores.slice(9).reduce((s, h) => s + h.score, 0)}
-                {' / '}
-                {round.totalScore}
-              </span>
-            </div>
+            {!isNineHole && (
+              <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between text-sm">
+                <span className="text-gray-500">Out / In / Total</span>
+                <span className="font-bold text-gray-900">
+                  {round.holeScores.slice(0, 9).reduce((s, h) => s + h.score, 0)}
+                  {' / '}
+                  {round.holeScores.slice(9).reduce((s, h) => s + h.score, 0)}
+                  {' / '}
+                  {round.totalScore}
+                </span>
+              </div>
+            )}
           </div>
         )}
 

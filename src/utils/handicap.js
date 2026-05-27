@@ -23,7 +23,18 @@ const WHS_TABLE = [
   { count: 8, adj: 0 },       // 20
 ];
 
-export function calcScoreDifferential(adjustedGrossScore, courseRating, slope) {
+// For 9-hole rounds, handicapIndex is required to apply WHS 2024 expected-score conversion.
+// Without a handicap index (new player), returns the raw 9-hole differential.
+export function calcScoreDifferential(adjustedGrossScore, courseRating, slope, holesPlayed = 18, handicapIndex = null) {
+  if (holesPlayed === 9) {
+    const nineHoleSD = parseFloat(((adjustedGrossScore - courseRating / 2) * 113 / slope).toFixed(1));
+    if (handicapIndex !== null) {
+      // WHS 2024: add expected 9-hole SD to produce an 18-hole equivalent differential
+      const expectedSD = parseFloat((handicapIndex / 2 + 1.5).toFixed(1));
+      return parseFloat((nineHoleSD + expectedSD).toFixed(1));
+    }
+    return nineHoleSD;
+  }
   return parseFloat(((adjustedGrossScore - courseRating) * 113 / slope).toFixed(1));
 }
 
@@ -58,9 +69,10 @@ export function getHoleStrokes(courseHandicap, strokeIndex) {
 }
 
 // WHS: cap each hole at net double bogey for adjusted gross score
-export function calcAdjustedGrossScore(holeScores, courseHandicap) {
+export function calcAdjustedGrossScore(holeScores, courseHandicap, holesPlayed = 18) {
+  const effectiveHandicap = holesPlayed === 9 ? Math.round(courseHandicap / 2) : courseHandicap;
   return holeScores.reduce((total, hole) => {
-    const strokes = getHoleStrokes(courseHandicap, hole.strokeIndex || 0);
+    const strokes = getHoleStrokes(effectiveHandicap, hole.strokeIndex || 0);
     const max = hole.par + 2 + strokes;
     return total + (hole.score > 0 ? Math.min(hole.score, max) : hole.par); // use par if score missing
   }, 0);

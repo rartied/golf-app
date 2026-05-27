@@ -9,9 +9,11 @@ export function computeRoundStats(holes) {
   const totalPutts    = withPutts.reduce((s, h) => s + h.putts, 0);
   const fairwaysHit   = withFairway.filter(h => h.fairway === 'hit').length;
   const greensHit     = withGreen.filter(h => h.greenHit === 'hit').length;
-  const girCount      = withGreen.filter(h =>
+  const girHoles      = withGreen.filter(h =>
     h.greenHit === 'hit' && h.putts != null && (h.score - h.putts) <= (h.par - 2)
-  ).length;
+  );
+  const girCount      = girHoles.length;
+  const girPutts      = girHoles.reduce((s, h) => s + h.putts, 0);
 
   const fwBunkers    = holes.reduce((s, h) => s + (h.fairwayBunkers  ?? 0), 0);
   const gsBunkers    = holes.reduce((s, h) => s + (h.greensideBunkers ?? 0), 0);
@@ -35,6 +37,7 @@ export function computeRoundStats(holes) {
     greensHit,
     greensAttempts:  withGreen.length,
     girCount,
+    girPutts,
     totalHoles:      holes.length,
     fwBunkers,
     gsBunkers,

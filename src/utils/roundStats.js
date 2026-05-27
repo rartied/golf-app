@@ -15,6 +15,11 @@ export function computeRoundStats(holes) {
 
   const fwBunkers    = holes.reduce((s, h) => s + (h.fairwayBunkers  ?? 0), 0);
   const gsBunkers    = holes.reduce((s, h) => s + (h.greensideBunkers ?? 0), 0);
+  const chipShots    = holes.reduce((s, h) => s + (h.chipShots ?? 0), 0);
+
+  // Up & down: hole where player chipped (≥1 chip) and then 1-putted
+  const upAndDownAttempts = holes.filter(h => (h.chipShots ?? 0) >= 1).length;
+  const upAndDowns        = holes.filter(h => (h.chipShots ?? 0) >= 1 && h.putts === 1).length;
   const waterHazards = holes.reduce((s, h) => s + (h.waterHazards ?? 0), 0);
   const outOfBounds  = holes.reduce((s, h) => s + (h.outOfBounds  ?? 0), 0);
   const dropShots    = holes.reduce((s, h) => s + (h.dropShots    ?? 0), 0);
@@ -33,6 +38,9 @@ export function computeRoundStats(holes) {
     totalHoles:      holes.length,
     fwBunkers,
     gsBunkers,
+    chipShots,
+    upAndDowns,
+    upAndDownAttempts,
     waterHazards,
     outOfBounds,
     dropShots,

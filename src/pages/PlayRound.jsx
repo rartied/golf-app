@@ -117,7 +117,7 @@ function DirectionPicker({ label, value, onChange, hasLongShort = false }) {
 
 function TapCounter({ label, value, onChange }) {
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center">
       <div className="relative">
         <button
           onClick={() => onChange(value + 1)}
@@ -125,8 +125,8 @@ function TapCounter({ label, value, onChange }) {
             value > 0 ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-100'
           }`}
         >
-          <span className={`text-2xl font-black tabular-nums ${value > 0 ? 'text-golf-green' : 'text-gray-300'}`}>
-            {value}
+          <span className={`text-[11px] font-bold text-center leading-tight ${value > 0 ? 'text-golf-green' : 'text-gray-400'}`}>
+            {label}
           </span>
         </button>
         {value > 0 && (
@@ -138,7 +138,9 @@ function TapCounter({ label, value, onChange }) {
           </button>
         )}
       </div>
-      <span className="text-[11px] font-medium text-gray-500 text-center leading-tight w-16">{label}</span>
+      <span className={`text-sm font-bold mt-1 tabular-nums ${value > 0 ? 'text-golf-green' : 'invisible'}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -156,6 +158,7 @@ function buildHoleScores(course, tee, nineHoleType) {
       greenHit:    null,
       fairwayBunkers:   0,
       greensideBunkers: 0,
+      chipShots:        0,
       waterHazards:     0,
       outOfBounds:      0,
       dropShots:        0,
@@ -171,6 +174,7 @@ function buildHoleScores(course, tee, nineHoleType) {
       greenHit:    null,
       fairwayBunkers:   0,
       greensideBunkers: 0,
+      chipShots:        0,
       waterHazards:     0,
       outOfBounds:      0,
       dropShots:        0,
@@ -617,12 +621,21 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
 
           {/* Bunkers + Penalties */}
           <div className="bg-white rounded-2xl shadow-sm px-4 py-2 space-y-2">
-            {/* Bunkers row */}
-            <div>
-              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Bunkers</p>
-              <div className="flex justify-around">
-                <TapCounter label="FW Bunker" value={hole.fairwayBunkers} onChange={v => updateHoleStat(currentHole, 'fairwayBunkers', v)} />
-                <TapCounter label="GS Bunker" value={hole.greensideBunkers} onChange={v => updateHoleStat(currentHole, 'greensideBunkers', v)} />
+            {/* Bunkers + Chip row */}
+            <div className="flex items-stretch">
+              <div className="flex-[2] flex flex-col">
+                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Bunkers</p>
+                <div className="flex justify-around">
+                  <TapCounter label="FW" value={hole.fairwayBunkers} onChange={v => updateHoleStat(currentHole, 'fairwayBunkers', v)} />
+                  <TapCounter label="GS" value={hole.greensideBunkers} onChange={v => updateHoleStat(currentHole, 'greensideBunkers', v)} />
+                </div>
+              </div>
+              <div className="w-px bg-gray-200" />
+              <div className="flex-[1] flex flex-col">
+                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Chip</p>
+                <div className="flex justify-center">
+                  <TapCounter label="Chip" value={hole.chipShots} onChange={v => updateHoleStat(currentHole, 'chipShots', v)} />
+                </div>
               </div>
             </div>
             <div className="border-t border-gray-100" />
@@ -744,6 +757,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                 roundStats.greensAttempts > 0   && ['Greens',     `${roundStats.greensHit}/${roundStats.greensAttempts}`],
                 roundStats.fwBunkers > 0        && ['FW Bunkers',  roundStats.fwBunkers],
                 roundStats.gsBunkers > 0        && ['GS Bunkers',  roundStats.gsBunkers],
+                roundStats.chipShots > 0        && ['Chips',       roundStats.chipShots],
+                roundStats.upAndDownAttempts > 0 && ['Up & Down', `${roundStats.upAndDowns}/${roundStats.upAndDownAttempts}`],
                 roundStats.waterHazards > 0     && ['Water',       roundStats.waterHazards],
                 roundStats.outOfBounds > 0      && ['OB',          roundStats.outOfBounds],
                 roundStats.dropShots > 0        && ['Drops',       roundStats.dropShots],

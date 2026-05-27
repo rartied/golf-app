@@ -70,12 +70,17 @@ export default function Stats({ rounds }) {
     return lowerIsBetter ? delta < 0 : delta > 0;
   }
 
+  const withChips    = enriched.filter(r => r.stats.upAndDownAttempts > 0);
+
   const avgPutts      = avg(withPutts, r => r.stats.totalPutts);
   const avgGIR        = avg(withGreen, r => (r.stats.girCount / r.stats.greensAttempts) * 100);
   const avgFW         = avg(withFairway, r => (r.stats.fairwaysHit / r.stats.fairwayAttempts) * 100);
   const avgFWBnkr     = avg(withStats, r => r.stats.fwBunkers);
   const avgGSBnkr     = avg(withStats, r => r.stats.gsBunkers);
   const avgPenalties  = avg(withStats, r => r.stats.penalties);
+  const avgUpDown     = avg(withChips, r => (r.stats.upAndDowns / r.stats.upAndDownAttempts) * 100);
+
+  const upDownImproving = trendImproving(withChips, r => r.stats.upAndDowns / r.stats.upAndDownAttempts, false);
 
   const puttImproving = trendImproving(withPutts, r => r.stats.totalPutts, true);
   const girImproving  = trendImproving(withGreen, r => r.stats.girCount / r.stats.greensAttempts, false);
@@ -168,6 +173,12 @@ export default function Stats({ rounds }) {
                 <StatCard
                   label="Penalties / Rnd"
                   value={avgPenalties != null ? avgPenalties.toFixed(1) : null}
+                />
+                <StatCard
+                  label="Up & Down %"
+                  value={avgUpDown != null ? `${avgUpDown.toFixed(0)}%` : null}
+                  sub={withChips.length > 0 ? `${withChips.length} rounds` : null}
+                  improving={upDownImproving}
                 />
               </div>
             </div>

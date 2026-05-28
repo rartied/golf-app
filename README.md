@@ -4,18 +4,19 @@ A mobile-first golf handicap and stats tracker built with React, Vite, and Supab
 
 ## Features
 
-- **Handicap Index** — WHS 2024-compliant score differential calculation
+- **Handicap Index** — WHS 2024-compliant score differential and handicap index calculation
 - **Hole-by-hole scoring** — score, putts, fairway direction, green hit, bunkers, chip shots, penalties
 - **Stats** — averages, trends, personal records, last round vs. previous
 - **Courses** — add courses with full tee/hole data (par, rating, slope, stroke index)
-- **Stroke calculator** — course handicap and net scoring
+- **Stroke calculator** — course handicap and net scoring per hole
+
+See [CALCULATIONS.md](CALCULATIONS.md) for a full explanation of every formula used in the app.
 
 ## Tech stack
 
 - [React](https://react.dev/) + [Vite](https://vitejs.dev/)
 - [Supabase](https://supabase.com/) (Postgres + REST API)
 - [Tailwind CSS](https://tailwindcss.com/)
-- Deployed on [Vercel](https://vercel.com/)
 
 ---
 
@@ -55,12 +56,16 @@ npm run dev
 
 ---
 
-## Deploy to Vercel
+## Deploying
 
-1. Push your fork to GitHub.
-2. Import the repo in [Vercel](https://vercel.com/new).
-3. Add the two environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) in Vercel's project settings.
-4. Deploy — Vercel auto-detects Vite.
+The app builds to a static bundle (`npm run build` → `dist/`). You can host it anywhere that serves static files:
+
+- **Vercel** — import the repo, add the two env vars in project settings, deploy.
+- **Netlify** — same process; set build command to `npm run build` and publish directory to `dist`.
+- **Cloudflare Pages** — connect the repo, same build settings.
+- **Self-hosted** — serve the `dist/` folder with any static file server (nginx, Caddy, etc.).
+
+Set the two `VITE_` environment variables in whatever host you use — that's the only configuration required.
 
 ---
 
@@ -79,7 +84,7 @@ The full schema is in [`supabase/schema.sql`](supabase/schema.sql). The app uses
 
 ## Using a different database
 
-The data layer lives entirely in [`src/hooks/useAppData.js`](src/hooks/useAppData.js). Supabase is only used there. To swap it out (Firebase, PlanetScale, local SQLite, etc.):
+The data layer lives entirely in [`src/hooks/useAppData.js`](src/hooks/useAppData.js). Supabase is only used there. To swap it out (Firebase, PlanetScale, local SQLite, a simple REST API, etc.):
 
 1. Replace the `supabase` calls in `useAppData.js` with your own async fetch/mutation logic.
 2. Keep the same return shape (`rounds`, `courses`, `addRound`, `deleteRound`, etc.) and nothing else in the app needs to change.

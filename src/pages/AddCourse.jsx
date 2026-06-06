@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { sharedSupabase } from '../lib/sharedSupabase';
 
 const TEE_COLORS = ['White', 'Yellow', 'Blue', 'Red', 'Gold', 'Black', 'Green', 'Silver', 'Orange', 'Purple'];
 
@@ -30,6 +31,8 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   );
   const [showHoles, setShowHoles] = useState(true);
   const [errors, setErrors] = useState({});
+  const [dupMatches, setDupMatches] = useState(null); // null = no check yet, [] = checked+clear, [...] = matches found
+  const [pendingCourse, setPendingCourse] = useState(null);
 
   function validate() {
     const e = {};
@@ -61,11 +64,8 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
     return e;
   }
 
-  function handleSave() {
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-
-    const course = {
+  function buildCourse() {
+    return {
       id: existing?.id || uuid(),
       name: name.trim(),
       location: location.trim(),
@@ -77,11 +77,47 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
       })),
       holes,
     };
+  }
 
+  function commitSave(course) {
     if (existing) updateCourse(course);
     else addCourse(course);
     window.scrollTo(0, 0);
     navigate('/courses');
+  }
+
+  async function handleSave() {
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    const course = buildCourse();
+
+    // Skip duplicate check when editing an existing course
+    if (existing) { commitSave(course); return; }
+
+    const { data } = await sharedSupabase
+      .from('courses')
+      .select('id, name, location')
+      .ilike('name', `%${name.trim()}%`);
+
+    const matches = (data ?? []).filter(c => c.id !== course.id);
+    if (matches.length > 0) {
+      setDupMatches(matches);
+      setPendingCourse(course);
+    } else {
+      commitSave(course);
+    }
+  }
+
+  function confirmDuplicate() {
+    if (pendingCourse) commitSave(pendingCourse);
+    setDupMatches(null);
+    setPendingCourse(null);
+  }
+
+  function cancelDuplicate() {
+    setDupMatches(null);
+    setPendingCourse(null);
   }
 
   function addTee() { setTees(t => [...t, emptyTee()]); }
@@ -315,6 +351,42 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
           {existing ? 'Save Changes' : 'Add Course'}
         </button>
       </div>
+
+      {/* Duplicate warning modal */}
+      {dupMatches && dupMatches.length > 0 && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={cancelDuplicate} />
+          <div className="relative bg-white rounded-t-3xl px-5 pt-5 pb-8 safe-pb">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+            <p className="text-lg font-bold text-gray-900 mb-1">Possible duplicate</p>
+            <p className="text-sm text-gray-500 mb-4">
+              The library already has {dupMatches.length === 1 ? 'a course' : 'courses'} with a similar name:
+            </p>
+            <div className="space-y-2 mb-5">
+              {dupMatches.map(c => (
+                <div key={c.id} className="bg-canvas-cream rounded-xl px-4 py-3">
+                  <p className="font-semibold text-gray-900 text-sm">{c.name}</p>
+                  {c.location && <p className="text-gray-400 text-xs mt-0.5">{c.location}</p>}
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={cancelDuplicate}
+                className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90"
+              >
+                Cancel — don't add
+              </button>
+              <button
+                onClick={confirmDuplicate}
+                className="w-full bg-white border border-hairline text-gray-600 font-semibold py-3.5 rounded-full active:bg-gray-50"
+              >
+                Add anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -39,7 +39,7 @@ export default function History({ rounds }) {
   }
 
   return (
-    <div className="min-h-screen bg-canvas-cream pb-24">
+    <div className="min-h-full bg-canvas-cream">
       <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
         <div className="flex items-center justify-between">
           <div>

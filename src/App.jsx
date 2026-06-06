@@ -13,7 +13,7 @@ import Stats from './pages/Stats'
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-canvas-cream flex flex-col items-center justify-center gap-4">
+    <div className="h-dvh bg-canvas-cream flex flex-col items-center justify-center gap-4">
       <p className="text-4xl">⛳</p>
       <p className="text-gray-500 text-sm font-medium">Loading your data…</p>
     </div>
@@ -47,20 +47,24 @@ export default function App() {
   if (data.loading) return <LoadingScreen />
   if (data.error)   return <ErrorScreen message={data.error} />
 
+  const isPlay = location.pathname === '/play'
+
   return (
-    <>
-      <Routes>
-        <Route path="/" element={<Dashboard {...data} />} />
-        <Route path="/play" element={<PlayRound {...data} />} />
-        <Route path="/history" element={<History {...data} />} />
-        <Route path="/history/:id" element={<RoundDetail {...data} />} />
-        <Route path="/courses" element={<Courses {...data} courseSort={courseSort} setCourseSort={setCourseSort} courseSearch={courseSearch} setCourseSearch={setCourseSearch} />} />
-        <Route path="/courses/add" element={<AddCourse {...data} />} />
-        <Route path="/courses/:courseId" element={<AddCourse {...data} />} />
-        <Route path="/strokes" element={<StrokeCard {...data} />} />
-        <Route path="/stats" element={<Stats {...data} />} />
-      </Routes>
-      {location.pathname !== '/play' && <Navigation />}
-    </>
+    <div className="h-dvh flex flex-col">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <Routes>
+          <Route path="/" element={<Dashboard {...data} />} />
+          <Route path="/play" element={<PlayRound {...data} />} />
+          <Route path="/history" element={<History {...data} />} />
+          <Route path="/history/:id" element={<RoundDetail {...data} />} />
+          <Route path="/courses" element={<Courses {...data} courseSort={courseSort} setCourseSort={setCourseSort} courseSearch={courseSearch} setCourseSearch={setCourseSearch} />} />
+          <Route path="/courses/add" element={<AddCourse {...data} />} />
+          <Route path="/courses/:courseId" element={<AddCourse {...data} />} />
+          <Route path="/strokes" element={<StrokeCard {...data} />} />
+          <Route path="/stats" element={<Stats {...data} />} />
+        </Routes>
+      </div>
+      {!isPlay && <Navigation />}
+    </div>
   )
 }

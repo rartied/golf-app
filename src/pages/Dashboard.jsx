@@ -99,7 +99,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   const trend = getHandicapTrend(rounds);
 
   return (
-    <div className="min-h-screen bg-canvas-cream pb-24">
+    <div className="min-h-full bg-canvas-cream">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-canvas-night safe-pt px-4 pb-8 pt-12 relative overflow-hidden">
         {/* Full-width chart behind everything */}

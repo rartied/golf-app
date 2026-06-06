@@ -100,7 +100,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
   // ── No handicap yet ────────────────────────────────────────────────────────
   if (handicapIndex === null) {
     return (
-      <div className="min-h-screen bg-canvas-cream pb-24 flex flex-col">
+      <div className="min-h-full bg-canvas-cream flex flex-col">
         <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
           <h1 className="text-2xl font-bold text-gray-900">Stroke Card</h1>
         </div>
@@ -116,7 +116,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
   // ── No courses ─────────────────────────────────────────────────────────────
   if (courses.length === 0) {
     return (
-      <div className="min-h-screen bg-canvas-cream pb-24 flex flex-col">
+      <div className="min-h-full bg-canvas-cream flex flex-col">
         <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
           <h1 className="text-2xl font-bold text-gray-900">Stroke Card</h1>
         </div>
@@ -148,7 +148,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
   const back9  = holes.slice(9);
 
   return (
-    <div className="min-h-screen bg-canvas-cream pb-24">
+    <div className="min-h-full bg-canvas-cream">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-canvas-night safe-pt px-4 pt-12 pb-6">
         <p className="text-white/50 text-sm font-medium">Handicap Index</p>

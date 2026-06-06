@@ -306,7 +306,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   // ── RESUME PROMPT ──────────────────────────────────────────────────────────
   if (phase === 'resume') {
     return (
-      <div className="min-h-screen bg-canvas-cream flex flex-col">
+      <div className="min-h-full bg-canvas-cream flex flex-col">
         <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1">
             <ArrowLeft size={22} className="text-gray-700" />
@@ -340,7 +340,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   // ── SETUP ──────────────────────────────────────────────────────────────────
   if (phase === 'setup') {
     return (
-      <div className="min-h-screen bg-canvas-cream pb-24">
+      <div className="min-h-full bg-canvas-cream">
         <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1">
             <ArrowLeft size={22} className="text-gray-700" />
@@ -707,7 +707,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   const roundStats = computeRoundStats(holeScores);
 
   return (
-    <div className="min-h-screen bg-canvas-cream pb-24">
+    <div className="min-h-full bg-canvas-cream">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-canvas-night safe-pt px-4 pt-12 pb-8 text-center">
         <p className="text-white/50 text-sm font-medium">Round Complete</p>

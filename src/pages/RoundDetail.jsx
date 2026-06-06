@@ -18,7 +18,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
 
   if (!round) {
     return (
-      <div className="min-h-screen bg-canvas-cream flex items-center justify-center">
+      <div className="min-h-full bg-canvas-cream flex items-center justify-center">
         <p className="text-gray-400">Round not found.</p>
       </div>
     );
@@ -91,7 +91,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
   const diff = displayTotal - round.coursePar;
 
   return (
-    <div className="min-h-screen bg-canvas-cream pb-24">
+    <div className="min-h-full bg-canvas-cream">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-canvas-night safe-pt px-4 pt-10 pb-8">
         <div className="flex items-center justify-between mb-4">

@@ -116,33 +116,55 @@ function DirectionPicker({ label, value, onChange, hasLongShort = false }) {
   );
 }
 
-function TapCounter({ label, value, onChange }) {
+function StatTracker({ topLabel, label, value, onChange }) {
+  const active = value > 0;
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative">
-        <button
-          onClick={() => onChange(value + 1)}
-          className={`w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-95 ${
-            value > 0 ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-100'
-          }`}
-        >
-          <span className={`text-[11px] font-bold text-center leading-tight ${value > 0 ? 'text-golf-green' : 'text-gray-400'}`}>
-            {label}
+    <div className="flex flex-col items-center gap-1">
+      <button
+        onClick={() => onChange(value + 1)}
+        className={`relative w-full aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+          active ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-50'
+        }`}
+      >
+        {topLabel && (
+          <span className={`text-[9px] font-bold uppercase leading-none ${active ? 'text-golf-green' : 'text-gray-400'}`}>
+            {topLabel}
           </span>
-        </button>
-        {value > 0 && (
+        )}
+        <span className={`text-2xl font-black leading-none tabular-nums ${active ? 'text-golf-green' : 'text-gray-700'}`}>
+          {value}
+        </span>
+        {active && (
           <button
             onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-gray-400 text-white text-xs font-bold rounded-full flex items-center justify-center"
-          >
-            −
-          </button>
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-400 text-white text-xs font-bold rounded-full flex items-center justify-center"
+          >−</button>
         )}
-      </div>
-      <span className={`text-sm font-bold mt-1 tabular-nums ${value > 0 ? 'text-golf-green' : 'invisible'}`}>
-        {value}
+      </button>
+      <span className={`text-[9px] font-semibold uppercase tracking-wide text-center leading-tight ${active ? 'text-golf-green' : 'text-gray-400'}`}>
+        {label}
       </span>
     </div>
+  );
+}
+
+function PenaltyPill({ label, value, onChange }) {
+  const active = value > 0;
+  return (
+    <button
+      onClick={() => onChange(value + 1)}
+      className={`relative flex-1 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all active:scale-95 ${
+        active ? 'bg-canvas-night text-white' : 'bg-white border border-hairline text-gray-500'
+      }`}
+    >
+      {label}{active ? ` · ${value}` : ''}
+      {active && (
+        <button
+          onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-400 text-white text-xs font-bold rounded-full flex items-center justify-center"
+        >−</button>
+      )}
+    </button>
   );
 }
 
@@ -163,6 +185,7 @@ function buildHoleScores(course, tee, nineHoleType) {
       waterHazards:     0,
       outOfBounds:      0,
       dropShots:        0,
+      ballsLost:        0,
     }));
   } else {
     holes = Array.from({ length: 18 }, (_, i) => ({
@@ -179,6 +202,7 @@ function buildHoleScores(course, tee, nineHoleType) {
       waterHazards:     0,
       outOfBounds:      0,
       dropShots:        0,
+      ballsLost:        0,
     }));
   }
   if (nineHoleType === 'front') return holes.slice(0, 9);
@@ -618,34 +642,21 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             </div>
           </div>
 
-          {/* Bunkers + Penalties */}
-          <div className="bg-white rounded-xl shadow-card px-4 py-2 space-y-2">
-            {/* Bunkers + Chip row */}
-            <div className="flex items-stretch">
-              <div className="flex-[2] flex flex-col">
-                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Bunkers</p>
-                <div className="flex justify-around">
-                  <TapCounter label="FW" value={hole.fairwayBunkers} onChange={v => updateHoleStat(currentHole, 'fairwayBunkers', v)} />
-                  <TapCounter label="GS" value={hole.greensideBunkers} onChange={v => updateHoleStat(currentHole, 'greensideBunkers', v)} />
-                </div>
-              </div>
-              <div className="w-px bg-gray-200" />
-              <div className="flex-[1] flex flex-col">
-                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Chip</p>
-                <div className="flex justify-center">
-                  <TapCounter label="Chip" value={hole.chipShots} onChange={v => updateHoleStat(currentHole, 'chipShots', v)} />
-                </div>
-              </div>
+          {/* Stat Trackers + Penalties */}
+          <div className="bg-white rounded-xl shadow-card px-4 py-3 space-y-3">
+            <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Stat Trackers</p>
+            <div className="grid grid-cols-4 gap-2">
+              <StatTracker topLabel="FW" label="Bunker" value={hole.fairwayBunkers} onChange={v => updateHoleStat(currentHole, 'fairwayBunkers', v)} />
+              <StatTracker topLabel="GS" label="Bunker" value={hole.greensideBunkers} onChange={v => updateHoleStat(currentHole, 'greensideBunkers', v)} />
+              <StatTracker label="Chip" value={hole.chipShots} onChange={v => updateHoleStat(currentHole, 'chipShots', v)} />
+              <StatTracker label="Lost Ball" value={hole.ballsLost ?? 0} onChange={v => updateHoleStat(currentHole, 'ballsLost', v)} />
             </div>
-            <div className="border-t border-gray-100" />
-            {/* Penalties row */}
-            <div>
-              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest text-center mb-2">Penalties</p>
-              <div className="flex justify-around">
-                <TapCounter label="Water" value={hole.waterHazards} onChange={v => updateHoleStat(currentHole, 'waterHazards', v)} />
-                <TapCounter label="OB" value={hole.outOfBounds} onChange={v => updateHoleStat(currentHole, 'outOfBounds', v)} />
-                <TapCounter label="Drop" value={hole.dropShots} onChange={v => updateHoleStat(currentHole, 'dropShots', v)} />
-              </div>
+            <div className="border-t border-hairline" />
+            <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Penalties</p>
+            <div className="flex gap-2">
+              <PenaltyPill label="Water" value={hole.waterHazards} onChange={v => updateHoleStat(currentHole, 'waterHazards', v)} />
+              <PenaltyPill label="OB" value={hole.outOfBounds} onChange={v => updateHoleStat(currentHole, 'outOfBounds', v)} />
+              <PenaltyPill label="Drop" value={hole.dropShots} onChange={v => updateHoleStat(currentHole, 'dropShots', v)} />
             </div>
           </div>
 
@@ -761,6 +772,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                 roundStats.waterHazards > 0     && ['Water',       roundStats.waterHazards],
                 roundStats.outOfBounds > 0      && ['OB',          roundStats.outOfBounds],
                 roundStats.dropShots > 0        && ['Drops',       roundStats.dropShots],
+                roundStats.ballsLost > 0        && ['Lost Balls',  roundStats.ballsLost],
               ].filter(Boolean).map(([label, value]) => (
                 <div key={label} className="text-center py-2 bg-canvas-cream rounded-xl">
                   <p className="text-lg font-black text-gray-900 leading-tight">{value}</p>

@@ -28,6 +28,7 @@ export function computeRoundStats(holes) {
   // Legacy rounds stored a single `penalties` field — include it in the total
   const penalties    = waterHazards + outOfBounds + dropShots +
     holes.reduce((s, h) => s + (h.penalties ?? 0), 0);
+  const ballsLost    = holes.reduce((s, h) => s + (h.ballsLost ?? 0), 0);
 
   return {
     totalPutts,
@@ -48,6 +49,7 @@ export function computeRoundStats(holes) {
     outOfBounds,
     dropShots,
     penalties,
+    ballsLost,
     hasData: withPutts.length > 0 || withGreen.length > 0,
   };
 }

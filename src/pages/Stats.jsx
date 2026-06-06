@@ -149,6 +149,7 @@ export default function Stats({ rounds }) {
   const withStats   = enriched.filter(r => r.stats.hasData);
   const withChips   = enriched.filter(r => r.stats.upAndDownAttempts > 0);
   const withGIR     = enriched.filter(r => r.stats.girCount > 0);
+  const withBalls   = enriched.filter(r => r.holeScores?.[0]?.ballsLost != null);
 
   function avg(arr, fn) {
     if (!arr.length) return null;
@@ -182,6 +183,9 @@ export default function Stats({ rounds }) {
   const fwImproving       = trendImproving(withFairway, r => r.stats.fairwaysHit / r.stats.fairwayAttempts, false);
   const upDownImproving   = trendImproving(withChips,   r => r.stats.upAndDowns / r.stats.upAndDownAttempts, false);
   const girPuttImproving  = trendImproving(withGIR,     r => r.stats.girPutts / r.stats.girCount, true);
+
+  const avgBalls       = avg(withBalls, r => r.stats.ballsLost);
+  const ballsImproving = trendImproving(withBalls, r => r.stats.ballsLost, true);
 
   // Personal records
   const bestPuttRound = withPutts.length
@@ -302,6 +306,15 @@ export default function Stats({ rounds }) {
       avg: avgUpDown,
       fmt: v => `${v.toFixed(0)}%`,
     },
+    withBalls.length > 0 && {
+      label: 'Balls / Round',
+      value: avgBalls != null ? avgBalls.toFixed(1) : null,
+      sub: withBalls.length < allRounds.length ? `${withBalls.length} rounds` : null,
+      improving: ballsImproving,
+      points: withBalls.map(r => ({ date: r.date, v: r.stats.ballsLost })),
+      avg: avgBalls,
+      fmt: v => v.toFixed(1),
+    },
   ].filter(Boolean);
 
   return (
@@ -339,6 +352,12 @@ export default function Stats({ rounds }) {
               last: `${lp.fairwaysHit}/${lp.fairwayAttempts}`,
               prev: `${pp.fairwaysHit}/${pp.fairwayAttempts}`,
               d: delta(lastRound, prevRound, r => r.stats.fairwaysHit / r.stats.fairwayAttempts, false),
+            },
+            lastRound.holeScores?.[0]?.ballsLost != null && prevRound.holeScores?.[0]?.ballsLost != null && {
+              label: 'Balls Lost',
+              last: lp.ballsLost,
+              prev: pp.ballsLost,
+              d: delta(lastRound, prevRound, r => r.stats.ballsLost, true),
             },
           ].filter(Boolean);
           if (!rows.length) return null;
@@ -379,15 +398,16 @@ export default function Stats({ rounds }) {
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-2">Averages</h2>
             <div className="grid grid-cols-2 gap-2">
-              {statCards.map(card => (
-                <StatCard
-                  key={card.label}
-                  label={card.label}
-                  value={card.value}
-                  sub={card.sub}
-                  improving={card.improving}
-                  onClick={card.points?.length >= 2 ? () => setSelectedStat(card) : undefined}
-                />
+              {statCards.map((card, i) => (
+                <div key={card.label} className={statCards.length % 2 !== 0 && i === statCards.length - 1 ? 'col-span-2' : ''}>
+                  <StatCard
+                    label={card.label}
+                    value={card.value}
+                    sub={card.sub}
+                    improving={card.improving}
+                    onClick={card.points?.length >= 2 ? () => setSelectedStat(card) : undefined}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -452,6 +472,27 @@ export default function Stats({ rounds }) {
                   navigate={navigate}
                 />
               )}
+              {withBalls.length > 0 && (() => {
+                const best = withBalls.reduce((b, r) => r.stats.ballsLost < b.stats.ballsLost ? r : b);
+                const total = withBalls.reduce((s, r) => s + r.stats.ballsLost, 0);
+                return (
+                  <>
+                    <RecordRow
+                      label="Fewest Balls Lost"
+                      value={`${best.stats.ballsLost} ball${best.stats.ballsLost !== 1 ? 's' : ''}`}
+                      sub={roundSub(best)}
+                      roundId={best.id}
+                      navigate={navigate}
+                    />
+                    <RecordRow
+                      label="Career Balls Lost"
+                      value={`${total} total`}
+                      sub={`${withBalls.length} round${withBalls.length !== 1 ? 's' : ''} tracked`}
+                      navigate={navigate}
+                    />
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}

@@ -47,19 +47,17 @@ export default function DatePicker({ value, onChange, max, className = '' }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`w-full text-left flex items-center justify-between ${className}`}
+        className={`w-full text-left ${className}`}
       >
         <span className="text-gray-900 text-sm font-medium">
           {selected ? format(selected, 'MMMM d, yyyy') : 'Select date'}
         </span>
-        <span className="text-shade-40 text-xs">tap to change</span>
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <div className="relative bg-white rounded-t-3xl px-4 pt-4 pb-8 safe-pb">
-            <div className="w-10 h-1 bg-hairline rounded-full mx-auto mb-5" />
+          <div className="relative bg-white rounded-2xl px-4 pt-5 pb-5 w-full max-w-sm shadow-xl">
 
             {/* Month navigation */}
             <div className="flex items-center justify-between mb-4 px-1">

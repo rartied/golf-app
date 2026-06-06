@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { ArrowLeft, ChevronLeft, ChevronRight, Flag, Search } from 'lucide-react';
+import DatePicker from '../components/DatePicker';
 import { storage } from '../utils/storage';
 import {
   calcCourseHandicap,
@@ -351,12 +352,10 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Date Played</h2>
             <div className="bg-white rounded-xl shadow-card px-4 py-3">
-              <input
-                type="date"
+              <DatePicker
                 value={date}
+                onChange={setDate}
                 max={new Date().toISOString().split('T')[0]}
-                onChange={e => setDate(e.target.value)}
-                className="w-full text-gray-900 text-sm font-medium bg-transparent outline-none"
               />
             </div>
           </div>

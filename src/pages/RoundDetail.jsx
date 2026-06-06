@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowLeft, Trash2, Pencil, X } from 'lucide-react';
+import DatePicker from '../components/DatePicker';
 import { useState } from 'react';
 import { calcScoreDifferential, calcAdjustedGrossScore, calcCourseHandicap } from '../utils/handicap';
 
@@ -121,13 +122,14 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
         </div>
 
         {editing ? (
-          <input
-            type="date"
-            value={editDate}
-            max={new Date().toISOString().split('T')[0]}
-            onChange={e => setEditDate(e.target.value)}
-            className="text-white/50 text-sm font-medium bg-transparent outline-none border-b border-white/30 pb-0.5 mb-1"
-          />
+          <div className="mb-1">
+            <DatePicker
+              value={editDate}
+              onChange={setEditDate}
+              max={new Date().toISOString().split('T')[0]}
+              className="text-white/70 text-sm"
+            />
+          </div>
         ) : (
           <p className="text-white/50 text-sm font-medium">
             {format(new Date(round.date + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}

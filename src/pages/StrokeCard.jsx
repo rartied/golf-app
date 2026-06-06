@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { calcCourseHandicap, getHoleStrokes } from '../utils/handicap';
 
 function teeColorHex(color) {
@@ -12,13 +13,86 @@ function teeColorHex(color) {
 }
 
 
+function CourseSearch({ courses, selected, onSelect }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const filtered = query.trim()
+    ? courses.filter(c =>
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        (c.location ?? '').toLowerCase().includes(query.toLowerCase())
+      )
+    : courses;
+
+  function pick(course) {
+    onSelect(course);
+    setQuery('');
+    setOpen(false);
+    inputRef.current?.blur();
+  }
+
+  // Close dropdown when tapping outside
+  useEffect(() => {
+    function onPointerDown(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery('');
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="flex items-center gap-2 border border-hairline rounded-xl px-3 py-2.5 bg-white focus-within:ring-2 focus-within:ring-ink">
+        <Search size={15} className="text-shade-40 flex-shrink-0" />
+        <input
+          ref={inputRef}
+          value={open ? query : ''}
+          placeholder={selected?.name ?? 'Search courses…'}
+          onFocus={() => setOpen(true)}
+          onChange={e => setQuery(e.target.value)}
+          className="flex-1 text-sm text-gray-900 bg-transparent outline-none placeholder:text-gray-900 placeholder:font-medium"
+        />
+      </div>
+
+      {open && filtered.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-card overflow-hidden z-30 max-h-56 overflow-y-auto">
+          {filtered.map(course => (
+            <button
+              key={course.id}
+              onPointerDown={e => { e.preventDefault(); pick(course); }}
+              className={`w-full text-left px-4 py-3 flex flex-col border-b border-hairline last:border-0 active:bg-canvas-cream transition-colors ${
+                course.id === selected?.id ? 'bg-canvas-cream' : ''
+              }`}
+            >
+              <span className="text-sm font-semibold text-gray-900">{course.name}</span>
+              {course.location && (
+                <span className="text-xs text-shade-40 mt-0.5">{course.location}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {open && query.trim() && filtered.length === 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-card px-4 py-3 z-30">
+          <p className="text-sm text-shade-40">No courses match "{query}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StrokeCard({ courses, handicapIndex }) {
   const navigate = useNavigate();
   const [selectedCourse, setSelectedCourse] = useState(courses[0] ?? null);
   const [selectedTee, setSelectedTee] = useState(courses[0]?.tees[0] ?? null);
 
-  function handleCourseChange(id) {
-    const course = courses.find(c => c.id === id);
+  function handleCourseChange(course) {
     setSelectedCourse(course ?? null);
     setSelectedTee(course?.tees[0] ?? null);
   }
@@ -86,17 +160,11 @@ export default function StrokeCard({ courses, handicapIndex }) {
         <div className="bg-white rounded-xl shadow-card p-4 space-y-4">
           <div>
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Course</label>
-            {courses.length === 1 ? (
-              <p className="text-sm font-semibold text-gray-900">{selectedCourse.name}</p>
-            ) : (
-              <select
-                value={selectedCourse?.id ?? ''}
-                onChange={e => handleCourseChange(e.target.value)}
-                className="w-full border border-hairline rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white outline-none focus:ring-2 focus:ring-ink"
-              >
-                {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            )}
+            <CourseSearch
+              courses={courses}
+              selected={selectedCourse}
+              onSelect={handleCourseChange}
+            />
           </div>
 
           {selectedCourse && (

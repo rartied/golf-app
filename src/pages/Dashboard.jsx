@@ -235,9 +235,6 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
                   onClick={() => navigate(`/history/${round.id}`)}
                   className="w-full bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg">⛳</span>
-                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm truncate">{round.courseName}</p>
                     <p className="text-gray-400 text-xs mt-0.5">

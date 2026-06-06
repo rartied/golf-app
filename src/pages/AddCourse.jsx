@@ -99,8 +99,8 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-gray-100 flex items-center gap-3">
+    <div className="min-h-screen bg-canvas-cream pb-24">
+      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1 -ml-1">
           <ArrowLeft size={22} className="text-gray-700" />
         </button>
@@ -109,12 +109,12 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
 
       <div className="px-4 pt-5 space-y-5">
         {/* Course info */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+        <div className="bg-white rounded-xl shadow-card p-4 space-y-4">
           <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Course Info</h2>
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">Course Name *</label>
             <input
-              className={`w-full border rounded-xl px-3 py-2.5 text-gray-900 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors.name ? 'border-red-400' : 'border-gray-200'}`}
+              className={`w-full border rounded-xl px-3 py-2.5 text-gray-900 text-sm outline-none focus:ring-2 focus:ring-ink ${errors.name ? 'border-red-400' : 'border-hairline'}`}
               value={name}
               onChange={e => { setName(e.target.value); setErrors(x => ({ ...x, name: '' })); }}
               placeholder="e.g. Pebble Beach Golf Links"
@@ -124,7 +124,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">Location (optional)</label>
             <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-gray-900 text-sm outline-none focus:ring-2 focus:ring-golf-green"
+              className="w-full border border-hairline rounded-xl px-3 py-2.5 text-gray-900 text-sm outline-none focus:ring-2 focus:ring-ink"
               value={location}
               onChange={e => setLocation(e.target.value)}
               placeholder="City, State"
@@ -133,10 +133,10 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
         </div>
 
         {/* Tees */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+        <div className="bg-white rounded-xl shadow-card p-4 space-y-4">
           <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Tees</h2>
           {tees.map((tee, i) => (
-            <div key={tee.id} className="border border-gray-100 rounded-xl p-3 space-y-3">
+            <div key={tee.id} className="border border-hairline rounded-xl p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Tee {i + 1}</span>
                 {tees.length > 1 && (
@@ -149,7 +149,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Name</label>
                   <input
-                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green"
+                    className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink"
                     value={tee.name}
                     onChange={e => updateTee(tee.id, 'name', e.target.value)}
                     placeholder="e.g. Blue (optional)"
@@ -160,7 +160,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   <label className="text-xs text-gray-400 mb-1 block">Color *</label>
                   <input
                     list={`tee-colors-${tee.id}`}
-                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green bg-white"
+                    className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink bg-white"
                     value={tee.color}
                     onChange={e => updateTee(tee.id, 'color', e.target.value)}
                     placeholder="e.g. White"
@@ -175,7 +175,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                     type="number"
                     step="0.1"
                     inputMode="decimal"
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors[`tee_rating_${i}`] ? 'border-red-400' : 'border-gray-200'}`}
+                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_rating_${i}`] ? 'border-red-400' : 'border-hairline'}`}
                     value={tee.rating}
                     onChange={e => { updateTee(tee.id, 'rating', e.target.value); setErrors(x => ({ ...x, [`tee_rating_${i}`]: '' })); }}
                     placeholder="72.1"
@@ -187,7 +187,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   <input
                     type="number"
                     inputMode="numeric"
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors[`tee_slope_${i}`] ? 'border-red-400' : 'border-gray-200'}`}
+                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_slope_${i}`] ? 'border-red-400' : 'border-hairline'}`}
                     value={tee.slope}
                     onChange={e => { updateTee(tee.id, 'slope', e.target.value); setErrors(x => ({ ...x, [`tee_slope_${i}`]: '' })); }}
                     placeholder="113"
@@ -199,7 +199,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   <input
                     type="number"
                     inputMode="numeric"
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-golf-green ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-gray-200'}`}
+                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-hairline'}`}
                     value={tee.par}
                     onChange={e => { updateTee(tee.id, 'par', e.target.value); setErrors(x => ({ ...x, [`tee_par_${i}`]: '' })); }}
                   />
@@ -210,14 +210,14 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
           ))}
           <button
             onClick={addTee}
-            className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-sm font-medium active:border-golf-green active:text-golf-green transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-hairline rounded-xl text-gray-400 text-sm font-medium active:border-ink active:text-ink transition-colors"
           >
             <Plus size={16} /> Add Tee
           </button>
         </div>
 
         {/* Hole Details */}
-        <div className="bg-white rounded-2xl shadow-sm">
+        <div className="bg-white rounded-xl shadow-card">
           <button
             onClick={() => setShowHoles(s => !s)}
             className="w-full px-4 py-4 flex items-center justify-between text-left"
@@ -310,7 +310,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
 
         <button
           onClick={handleSave}
-          className="w-full bg-golf-green text-white font-semibold py-4 rounded-2xl active:opacity-90 transition-opacity"
+          className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90 transition-opacity"
         >
           {existing ? 'Save Changes' : 'Add Course'}
         </button>

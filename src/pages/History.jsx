@@ -39,8 +39,8 @@ export default function History({ rounds }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-gray-100">
+    <div className="min-h-screen bg-canvas-cream pb-24">
+      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">History</h1>
@@ -81,7 +81,7 @@ export default function History({ rounds }) {
 
       <div className="px-4 pt-4 space-y-2">
         {sorted.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
+          <div className="bg-white rounded-xl shadow-card p-10 text-center">
             <p className="text-4xl mb-3">⛳</p>
             <p className="text-gray-600 font-medium">No rounds yet</p>
             <p className="text-gray-400 text-sm mt-1">Play a round to see your history</p>
@@ -93,7 +93,7 @@ export default function History({ rounds }) {
               ? round.handicapAfter - prev.handicapAfter
               : null;
             return (
-              <div key={round.id} className="bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3">
+              <div key={round.id} className="bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3">
                 <div className="flex-shrink-0 text-center w-12">
                   <p className="text-xs text-gray-400 font-medium uppercase">
                     {format(new Date(round.date + 'T00:00:00'), 'MMM')}
@@ -105,7 +105,7 @@ export default function History({ rounds }) {
                     {format(new Date(round.date + 'T00:00:00'), 'yyyy')}
                   </p>
                 </div>
-                <div className="w-px h-10 bg-gray-100 flex-shrink-0" />
+                <div className="w-px h-10 bg-hairline flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm truncate">{round.courseName}</p>
                   {round.teeName && <p className="text-gray-400 text-xs mt-0.5">{round.teeName}</p>}
@@ -134,7 +134,7 @@ export default function History({ rounds }) {
             const isOpen = !!expanded[group.key];
             const latest = group.rounds[0];
             return (
-              <div key={group.key} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div key={group.key} className="bg-white rounded-xl shadow-card overflow-hidden">
                 {/* Course header — tap to expand */}
                 <button
                   onClick={() => toggleExpand(group.key)}
@@ -153,15 +153,15 @@ export default function History({ rounds }) {
                 </button>
 
                 {/* Most recent round always visible */}
-                <div className="border-t border-gray-100">
+                <div className="border-t border-hairline">
                   <RoundRow round={latest} navigate={navigate} compact />
                 </div>
 
                 {/* Rest of rounds shown when expanded */}
                 {isOpen && group.rounds.length > 1 && (
-                  <div className="border-t border-gray-100">
+                  <div className="border-t border-hairline">
                     {group.rounds.slice(1).map(round => (
-                      <div key={round.id} className="border-b border-gray-50 last:border-0">
+                      <div key={round.id} className="border-b border-hairline last:border-0">
                         <RoundRow round={round} navigate={navigate} compact />
                       </div>
                     ))}

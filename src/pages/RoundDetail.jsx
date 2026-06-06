@@ -17,7 +17,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
 
   if (!round) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-canvas-cream flex items-center justify-center">
         <p className="text-gray-400">Round not found.</p>
       </div>
     );
@@ -90,9 +90,9 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
   const diff = displayTotal - round.coursePar;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-canvas-cream pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pt-10 pb-8">
+      <div className="bg-canvas-night safe-pt px-4 pt-10 pb-8">
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1 active:opacity-70">
             <ArrowLeft size={22} className="text-white/80" />
@@ -126,16 +126,16 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
             value={editDate}
             max={new Date().toISOString().split('T')[0]}
             onChange={e => setEditDate(e.target.value)}
-            className="text-green-200 text-sm font-medium bg-transparent outline-none border-b border-green-400/50 pb-0.5 mb-1"
+            className="text-white/50 text-sm font-medium bg-transparent outline-none border-b border-white/30 pb-0.5 mb-1"
           />
         ) : (
-          <p className="text-green-200 text-sm font-medium">
+          <p className="text-white/50 text-sm font-medium">
             {format(new Date(round.date + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}
           </p>
         )}
         <p className="text-white text-6xl font-black mt-1 leading-none">{displayTotal}</p>
         <p className={`text-xl font-bold mt-2 ${
-          diff === 0 ? 'text-green-200' : diff < 0 ? 'text-yellow-300' : 'text-red-300'
+          diff === 0 ? 'text-white/50' : diff < 0 ? 'text-yellow-300' : 'text-red-300'
         }`}>
           {diff === 0 ? 'Even' : diff > 0 ? `+${diff}` : diff} to par
         </p>
@@ -147,7 +147,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
       <div className="px-4 mt-4 space-y-3">
         {/* Stats (hidden while editing) */}
         {!editing && (
-          <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
+          <div className="bg-white rounded-xl shadow-card divide-y divide-hairline">
             {[
               ['Course Par', round.coursePar],
               ...(round.adjustedGrossScore !== round.totalScore
@@ -167,7 +167,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
 
         {/* Edit total score (no hole data) */}
         {editing && !hasHoleScores && (
-          <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-card p-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Total Score</p>
             <div className="flex items-center justify-center gap-8">
               <button
@@ -185,7 +185,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
 
         {/* Edit hole scores */}
         {editing && hasHoleScores && (
-          <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-card p-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Edit Scores</p>
             {(isNineHole ? [editScores] : [editScores.slice(0, 9), editScores.slice(9)]).map((nine, nineIdx) => (
               <div key={nineIdx}>
@@ -229,7 +229,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
 
         {/* Read-only scorecard */}
         {!editing && hasHoleScores && (
-          <div className="bg-white rounded-2xl shadow-sm p-4 overflow-x-auto">
+          <div className="bg-white rounded-xl shadow-card p-4 overflow-x-auto">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Scorecard</h3>
             {(isNineHole ? [round.holeScores] : [round.holeScores.slice(0, 9), round.holeScores.slice(9)]).map((nine, nineIdx) => (
               <div key={nineIdx} className="mb-2 last:mb-0">
@@ -272,7 +272,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
         {editing && (
           <button
             onClick={saveEdit}
-            className="w-full bg-golf-green text-white font-semibold py-4 rounded-2xl active:opacity-90"
+            className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90"
           >
             Save Changes
           </button>

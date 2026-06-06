@@ -19,7 +19,7 @@ function StatCard({ label, value, sub, improving, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`bg-white rounded-2xl shadow-sm px-4 py-3 flex flex-col text-left w-full transition-colors ${onClick ? 'active:bg-gray-50' : 'pointer-events-none'}`}
+      className={`bg-white rounded-xl shadow-card px-4 py-3 flex flex-col text-left w-full transition-colors ${onClick ? 'active:bg-gray-50' : 'pointer-events-none'}`}
     >
       <p className="text-xs text-gray-400 font-medium">{label}</p>
       <p className="text-2xl font-bold text-gray-900 mt-0.5">{value ?? '—'}</p>
@@ -44,7 +44,7 @@ function RecordRow({ label, value, sub, roundId, navigate }) {
         {sub && <p className="text-xs text-gray-400 mt-0.5 truncate">{sub}</p>}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-        <p className="font-bold text-golf-green">{value ?? '—'}</p>
+        <p className="font-bold text-ink">{value ?? '—'}</p>
         {roundId && <ChevronRight size={14} className="text-gray-300" />}
       </div>
     </button>
@@ -99,12 +99,12 @@ function TrendSheet({ config, onClose }) {
         <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" style={{ overflow: 'visible' }}>
           <line x1={PL} y1={avgY.toFixed(1)} x2={VW - PR} y2={avgY.toFixed(1)}
             stroke="#e5e7eb" strokeWidth="1.5" strokeDasharray="4,4" />
-          <path d={path} fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={path} fill="none" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           {svgPts.map((p, i) => (
             <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="3"
-              fill="white" stroke="#16a34a" strokeWidth="1.5" />
+              fill="white" stroke="#000000" strokeWidth="1.5" />
           ))}
-          <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="5" fill="#16a34a" />
+          <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="5" fill="#000000" />
           <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="2.5" fill="white" />
           <text x={PL} y={VH} fontSize="9" fill="#9ca3af">
             {format(new Date(points[0].date + 'T00:00:00'), 'MMM d')}
@@ -305,8 +305,8 @@ export default function Stats({ rounds }) {
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-gray-100">
+    <div className="min-h-screen bg-canvas-cream pb-24">
+      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
         <h1 className="text-2xl font-bold text-gray-900">Stats</h1>
         <p className="text-gray-500 text-sm mt-0.5">
           {withStats.length > 0
@@ -345,8 +345,8 @@ export default function Stats({ rounds }) {
           return (
             <div>
               <h2 className="text-base font-semibold text-gray-900 mb-2">Last Round vs. Previous</h2>
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-4 px-4 py-2 bg-gray-50 border-b border-gray-100">
+              <div className="bg-white rounded-xl shadow-card overflow-hidden">
+                <div className="grid grid-cols-4 px-4 py-2 bg-canvas-cream border-b border-hairline">
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider col-span-1"></p>
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider text-center truncate">
                     {format(new Date(lastRound.date + 'T00:00:00'), 'MMM d')}
@@ -357,7 +357,7 @@ export default function Stats({ rounds }) {
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider text-center">Δ</p>
                 </div>
                 {rows.map(row => (
-                  <div key={row.label} className="grid grid-cols-4 px-4 py-2.5 border-b border-gray-50 last:border-0">
+                  <div key={row.label} className="grid grid-cols-4 px-4 py-2.5 border-b border-hairline last:border-0">
                     <p className="text-sm text-gray-500 font-medium">{row.label}</p>
                     <p className="text-sm font-bold text-gray-900 text-center">{row.last}</p>
                     <p className="text-sm text-gray-400 text-center">{row.prev}</p>
@@ -370,7 +370,7 @@ export default function Stats({ rounds }) {
         })()}
 
         {!hasAnyStats ? (
-          <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
+          <div className="bg-white rounded-xl shadow-card p-10 text-center">
             <p className="text-4xl mb-3">📊</p>
             <p className="text-gray-600 font-medium">No stat data yet</p>
             <p className="text-gray-400 text-sm mt-1">Track fairways, greens, and putts on your next round</p>
@@ -397,7 +397,7 @@ export default function Stats({ rounds }) {
         {allRounds.length > 0 && (
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-2">Personal Records</h2>
-            <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
+            <div className="bg-white rounded-xl shadow-card divide-y divide-hairline">
               {bestDiff && (
                 <RecordRow
                   label="Best Differential"

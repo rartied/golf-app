@@ -13,7 +13,7 @@ import Stats from './pages/Stats'
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+    <div className="min-h-screen bg-canvas-cream flex flex-col items-center justify-center gap-4">
       <p className="text-4xl">⛳</p>
       <p className="text-gray-500 text-sm font-medium">Loading your data…</p>
     </div>
@@ -22,7 +22,7 @@ function LoadingScreen() {
 
 function ErrorScreen({ message }) {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-3 px-8 text-center">
+    <div className="min-h-screen bg-canvas-cream flex flex-col items-center justify-center gap-3 px-8 text-center">
       <p className="text-4xl">⚠️</p>
       <p className="text-gray-800 font-semibold">Could not connect</p>
       <p className="text-gray-500 text-sm">

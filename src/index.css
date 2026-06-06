@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,7 +7,9 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-gray-50 text-gray-900 overscroll-none;
+    @apply bg-canvas-cream text-ink overscroll-none;
+    font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
+    font-feature-settings: "ss03";
   }
 }
 
@@ -21,7 +22,6 @@
   }
 }
 
-/* Smooth number input on mobile */
 input[type="number"] {
   -moz-appearance: textfield;
 }

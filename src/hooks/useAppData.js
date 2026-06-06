@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { sharedSupabase } from '../lib/sharedSupabase';
 import { calcHandicapIndex } from '../utils/handicap';
 
 // DB uses snake_case columns; app uses camelCase objects
@@ -54,7 +55,7 @@ export function useAppData() {
       try {
         const [{ data: roundsData, error: re }, { data: coursesData, error: ce }] = await Promise.all([
           supabase.from('rounds').select('*').order('date', { ascending: false }),
-          supabase.from('courses').select('*').order('created_at', { ascending: false }),
+          sharedSupabase.from('courses').select('*').order('created_at', { ascending: false }),
         ]);
         if (re) throw re;
         if (ce) throw ce;
@@ -94,7 +95,7 @@ export function useAppData() {
 
   const addCourse = useCallback(async (course) => {
     setCourses(prev => [course, ...prev]); // optimistic
-    const { data, error } = await supabase.from('courses').insert([course]).select().single();
+    const { data, error } = await sharedSupabase.from('courses').insert([course]).select().single();
     if (error) {
       setCourses(prev => prev.filter(c => c.id !== course.id)); // rollback
       console.error('Failed to save course', error);
@@ -105,13 +106,13 @@ export function useAppData() {
 
   const updateCourse = useCallback(async (course) => {
     setCourses(prev => prev.map(c => c.id === course.id ? course : c)); // optimistic
-    const { error } = await supabase.from('courses').update(course).eq('id', course.id);
+    const { error } = await sharedSupabase.from('courses').update(course).eq('id', course.id);
     if (error) console.error('Failed to update course', error);
   }, []);
 
   const deleteCourse = useCallback(async (id) => {
     setCourses(prev => prev.filter(c => c.id !== id)); // optimistic
-    const { error } = await supabase.from('courses').delete().eq('id', id);
+    const { error } = await sharedSupabase.from('courses').delete().eq('id', id);
     if (error) console.error('Failed to delete course', error);
   }, []);
 

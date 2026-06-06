@@ -76,8 +76,8 @@ export default function Courses({ courses, deleteCourse, courseSort, setCourseSo
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-gray-100">
+    <div className="min-h-screen bg-canvas-cream pb-24">
+      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
         <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
         <p className="text-gray-500 text-sm mt-0.5">{courses.length} saved course{courses.length !== 1 ? 's' : ''}</p>
       </div>
@@ -92,7 +92,7 @@ export default function Courses({ courses, deleteCourse, courseSort, setCourseSo
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search courses…"
-                className="w-full bg-white border border-gray-200 rounded-2xl pl-9 pr-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-golf-green shadow-sm"
+                className="w-full bg-white border border-hairline rounded-full pl-9 pr-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-ink shadow-card"
               />
             </div>
             <div className="flex gap-2">
@@ -100,10 +100,10 @@ export default function Courses({ courses, deleteCourse, courseSort, setCourseSo
                 <button
                   key={s.key}
                   onClick={() => setSort(prev => prev === s.key ? null : s.key)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                  className={`flex-1 py-2 rounded-full text-xs font-semibold transition-colors ${
                     sort === s.key
                       ? 'bg-golf-green text-white'
-                      : 'bg-white text-gray-500 border border-gray-200'
+                      : 'bg-white text-gray-500 border border-hairline'
                   }`}
                 >
                   {s.label}
@@ -114,20 +114,20 @@ export default function Courses({ courses, deleteCourse, courseSort, setCourseSo
         )}
 
         {courses.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
+          <div className="bg-white rounded-xl shadow-card p-10 text-center">
             <p className="text-4xl mb-3">🏌️</p>
             <p className="text-gray-600 font-medium">No courses saved yet</p>
             <p className="text-gray-400 text-sm mt-1">Add a course to get started</p>
           </div>
         ) : displayed.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+          <div className="bg-white rounded-xl shadow-card p-8 text-center">
             <p className="text-gray-500 text-sm">No courses match "{search}"</p>
           </div>
         ) : (
           displayed.map(course => (
             <div
               key={course.id}
-              className="bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3"
+              className="bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3"
             >
               <button
                 className="flex-1 flex items-center gap-3 text-left active:opacity-70"

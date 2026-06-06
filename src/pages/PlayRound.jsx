@@ -85,7 +85,7 @@ function DirectionPicker({ label, value, onChange, hasLongShort = false }) {
             <path
               key={v}
               d={dpArc(a1, a2)}
-              fill={value === v ? '#16a34a' : '#f3f4f6'}
+              fill={value === v ? '#000000' : '#f3f4f6'}
               onClick={() => pick(v)}
               style={{ cursor: 'pointer' }}
             />
@@ -305,8 +305,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   // ── RESUME PROMPT ──────────────────────────────────────────────────────────
   if (phase === 'resume') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-gray-100 flex items-center gap-3">
+      <div className="min-h-screen bg-canvas-cream flex flex-col">
+        <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1">
             <ArrowLeft size={22} className="text-gray-700" />
           </button>
@@ -324,10 +324,10 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             </p>
           </div>
           <div className="w-full space-y-3">
-            <button onClick={handleResume} className="w-full bg-golf-green text-white font-semibold py-4 rounded-2xl active:opacity-90">
+            <button onClick={handleResume} className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90">
               Resume Round
             </button>
-            <button onClick={handleStartNew} className="w-full bg-white border border-gray-200 text-gray-600 font-semibold py-4 rounded-2xl active:bg-gray-50">
+            <button onClick={handleStartNew} className="w-full bg-white border border-hairline text-gray-600 font-semibold py-4 rounded-full active:bg-gray-50">
               Start New Round
             </button>
           </div>
@@ -339,8 +339,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   // ── SETUP ──────────────────────────────────────────────────────────────────
   if (phase === 'setup') {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24">
-        <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-gray-100 flex items-center gap-3">
+      <div className="min-h-screen bg-canvas-cream pb-24">
+        <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1">
             <ArrowLeft size={22} className="text-gray-700" />
           </button>
@@ -350,7 +350,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         <div className="px-4 pt-5 space-y-5">
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Date Played</h2>
-            <div className="bg-white rounded-2xl shadow-sm px-4 py-3">
+            <div className="bg-white rounded-xl shadow-card px-4 py-3">
               <input
                 type="date"
                 value={date}
@@ -364,7 +364,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Select Course</h2>
             {courses.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+              <div className="bg-white rounded-xl shadow-card p-8 text-center">
                 <p className="text-gray-500 text-sm">No courses saved yet.</p>
                 <button onClick={() => navigate('/courses/add')} className="mt-3 text-golf-green text-sm font-medium">
                   Add a course →
@@ -380,7 +380,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                       value={courseSearch}
                       onChange={e => setCourseSearch(e.target.value)}
                       placeholder="Search courses…"
-                      className="w-full bg-white border border-gray-200 rounded-2xl pl-9 pr-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-golf-green shadow-sm"
+                      className="w-full bg-white border border-hairline rounded-full pl-9 pr-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-ink shadow-card"
                     />
                   </div>
                 )}
@@ -395,8 +395,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                     <button
                       key={course.id}
                       onClick={() => { setSelectedCourse(course); setSelectedTee(null); setNineHoleType(null); }}
-                      className={`w-full text-left bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 transition-all ${
-                        selectedCourse?.id === course.id ? 'ring-2 ring-golf-green' : ''
+                      className={`w-full text-left bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 transition-all ${
+                        selectedCourse?.id === course.id ? 'ring-2 ring-ink' : ''
                       }`}
                     >
                       <div className="w-10 h-10 bg-golf-light rounded-full flex items-center justify-center flex-shrink-0">
@@ -428,8 +428,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                   <button
                     key={tee.id}
                     onClick={() => setSelectedTee(tee)}
-                    className={`w-full text-left bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 transition-all ${
-                      selectedTee?.id === tee.id ? 'ring-2 ring-golf-green' : ''
+                    className={`w-full text-left bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 transition-all ${
+                      selectedTee?.id === tee.id ? 'ring-2 ring-ink' : ''
                     }`}
                   >
                     <div className="w-4 h-4 rounded-full flex-shrink-0 border border-gray-200" style={{ backgroundColor: teeColorHex(tee.color) }} />
@@ -462,8 +462,8 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                   <button
                     key={label}
                     onClick={() => setNineHoleType(value)}
-                    className={`py-3 rounded-2xl text-sm font-semibold transition-colors ${
-                      nineHoleType === value ? 'bg-golf-green text-white' : 'bg-white text-gray-600 shadow-sm'
+                    className={`py-3 rounded-full text-sm font-semibold transition-colors ${
+                      nineHoleType === value ? 'bg-golf-green text-white' : 'bg-white text-gray-600 shadow-card'
                     }`}
                   >
                     {label}
@@ -474,7 +474,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           )}
 
           {selectedCourse && selectedTee && (
-            <button onClick={handleStart} className="w-full bg-golf-green text-white font-semibold py-4 rounded-2xl active:opacity-90 transition-opacity">
+            <button onClick={handleStart} className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90 transition-opacity">
               Log Round
             </button>
           )}
@@ -495,21 +495,21 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
       : false;
 
     return (
-      <div className="h-dvh bg-gray-50 flex flex-col">
+      <div className="h-dvh bg-canvas-cream flex flex-col">
         {/* Header */}
-        <div className="bg-golf-green safe-pt px-4 pt-2 pb-2 flex-shrink-0">
+        <div className="bg-canvas-night safe-pt px-4 pt-2 pb-2 flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <button onClick={() => setPhase('setup')} className="p-1 -ml-1 active:opacity-70">
               <ArrowLeft size={20} className="text-white/80" />
             </button>
             <div className="text-center flex-1 mx-2">
               <p className="text-white font-bold text-sm leading-tight truncate">{selectedCourse.name}</p>
-              <p className="text-green-200 text-xs">{selectedTee.name} · Par {selectedTee.par}</p>
+              <p className="text-white/50 text-xs">{selectedTee.name} · Par {selectedTee.par}</p>
             </div>
             <div className="text-right min-w-[36px]">
               <p className="text-white font-bold text-base leading-tight">{totalGross}</p>
               <p className={`text-xs font-semibold ${
-                totalDiff === 0 ? 'text-green-200' : totalDiff < 0 ? 'text-yellow-300' : 'text-red-300'
+                totalDiff === 0 ? 'text-white/50' : totalDiff < 0 ? 'text-yellow-300' : 'text-red-300'
               }`}>
                 {totalDiff === 0 ? 'E' : totalDiff > 0 ? `+${totalDiff}` : totalDiff}
               </p>
@@ -522,7 +522,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                 onClick={() => setCurrentHole(i)}
                 className={`rounded-full transition-all ${
                   i === currentHole
-                    ? `w-4 h-4 ring-2 ring-white ring-offset-1 ring-offset-golf-green ${dotColor(h.score, h.par)}`
+                    ? `w-4 h-4 ring-2 ring-white ring-offset-1 ring-offset-canvas-night ${dotColor(h.score, h.par)}`
                     : i < currentHole
                     ? `w-2.5 h-2.5 ${dotColor(h.score, h.par)}`
                     : 'w-2.5 h-2.5 bg-white/25'
@@ -536,7 +536,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         <div className="flex-1 overflow-y-auto px-3 py-1.5 space-y-1.5">
 
           {/* Score + Putts */}
-          <div className="bg-white rounded-2xl shadow-sm px-4 py-2">
+          <div className="bg-white rounded-xl shadow-card px-4 py-2">
             {/* Hole info */}
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-2xl font-black text-gray-900 leading-none">{hole.number}</span>
@@ -545,7 +545,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">SI {hole.strokeIndex}</span>
               )}
               {girAchieved && (
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">GIR ✓</span>
+                <span className="px-2 py-0.5 bg-golf-light text-gray-700 text-xs font-bold rounded-full">GIR ✓</span>
               )}
             </div>
 
@@ -594,7 +594,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           </div>
 
           {/* Direction pickers */}
-          <div className="bg-white rounded-2xl shadow-sm px-4 py-2">
+          <div className="bg-white rounded-xl shadow-card px-4 py-2">
             <div className="flex items-center gap-2">
               {hole.par !== 3 ? (
                 <DirectionPicker
@@ -620,7 +620,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           </div>
 
           {/* Bunkers + Penalties */}
-          <div className="bg-white rounded-2xl shadow-sm px-4 py-2 space-y-2">
+          <div className="bg-white rounded-xl shadow-card px-4 py-2 space-y-2">
             {/* Bunkers + Chip row */}
             <div className="flex items-stretch">
               <div className="flex-[2] flex flex-col">
@@ -653,12 +653,12 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         </div>
 
         {/* Navigation */}
-        <div className="px-4 pt-1 pb-3 safe-pb flex-shrink-0 bg-gray-50">
+        <div className="px-4 pt-1 pb-3 safe-pb flex-shrink-0 bg-canvas-cream">
           <div className="flex gap-3">
             {currentHole > 0 ? (
               <button
                 onClick={() => setCurrentHole(h => h - 1)}
-                className="flex-1 bg-white border border-gray-200 text-gray-700 font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-1 active:bg-gray-50"
+                className="flex-1 bg-white border border-hairline text-gray-700 font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:bg-gray-50"
               >
                 <ChevronLeft size={18} /> Prev
               </button>
@@ -668,14 +668,14 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             {currentHole < holeScores.length - 1 ? (
               <button
                 onClick={() => setCurrentHole(h => h + 1)}
-                className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-1 active:opacity-90"
+                className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:opacity-90"
               >
                 Next <ChevronRight size={18} />
               </button>
             ) : (
               <button
                 onClick={() => setPhase('summary')}
-                className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-2xl active:opacity-90"
+                className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-full active:opacity-90"
               >
                 Finish Round
               </button>
@@ -708,17 +708,17 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   const roundStats = computeRoundStats(holeScores);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-canvas-cream pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pt-12 pb-8 text-center">
-        <p className="text-green-200 text-sm font-medium">Round Complete</p>
+      <div className="bg-canvas-night safe-pt px-4 pt-12 pb-8 text-center">
+        <p className="text-white/50 text-sm font-medium">Round Complete</p>
         <p className="text-white text-6xl font-black mt-1 leading-none">{totalScore}</p>
         <p className={`text-xl font-bold mt-2 ${
-          diff === 0 ? 'text-green-200' : diff < 0 ? 'text-yellow-300' : 'text-red-300'
+          diff === 0 ? 'text-white/50' : diff < 0 ? 'text-yellow-300' : 'text-red-300'
         }`}>
           {diff === 0 ? 'Even' : diff > 0 ? `+${diff}` : diff} to par
         </p>
-        <p className="text-green-200 text-sm mt-2">
+        <p className="text-white/50 text-sm mt-2">
           {selectedCourse.name} · {selectedTee.name}
           {nineHoleType && ` · ${nineHoleType === 'front' ? 'Front 9' : 'Back 9'}`}
         </p>
@@ -726,7 +726,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
 
       <div className="px-4 mt-4 space-y-3">
         {/* Handicap stats */}
-        <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
+        <div className="bg-white rounded-xl shadow-card divide-y divide-hairline">
           {[
             ['Gross Score', totalScore],
             ['Course Par', coursePar],
@@ -747,7 +747,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
 
         {/* Round stats (only if data was tracked) */}
         {roundStats.hasData && (
-          <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-card p-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Round Stats</h3>
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -763,7 +763,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
                 roundStats.outOfBounds > 0      && ['OB',          roundStats.outOfBounds],
                 roundStats.dropShots > 0        && ['Drops',       roundStats.dropShots],
               ].filter(Boolean).map(([label, value]) => (
-                <div key={label} className="text-center py-2 bg-gray-50 rounded-xl">
+                <div key={label} className="text-center py-2 bg-canvas-cream rounded-xl">
                   <p className="text-lg font-black text-gray-900 leading-tight">{value}</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">{label}</p>
                 </div>
@@ -773,7 +773,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
         )}
 
         {/* Scorecard */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-card p-4 overflow-x-auto">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Scorecard</h3>
           {(holesPlayed === 9 ? [holeScores] : [holeScores.slice(0, 9), holeScores.slice(9)]).map((nine, nineIdx) => (
             <div key={nineIdx} className="mb-3 last:mb-0">
@@ -798,10 +798,10 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           ))}
         </div>
 
-        <button onClick={handleSave} className="w-full bg-golf-green text-white font-semibold py-4 rounded-2xl active:opacity-90 transition-opacity">
+        <button onClick={handleSave} className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90 transition-opacity">
           Save Round
         </button>
-        <button onClick={() => setPhase('scoring')} className="w-full bg-white border border-gray-200 text-gray-700 font-semibold py-3.5 rounded-2xl active:bg-gray-50">
+        <button onClick={() => setPhase('scoring')} className="w-full bg-white border border-hairline text-gray-700 font-semibold py-3.5 rounded-full active:bg-gray-50">
           Keep Editing
         </button>
         <button onClick={handleDiscard} className="w-full text-center text-gray-400 text-sm py-2">

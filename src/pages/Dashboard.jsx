@@ -99,31 +99,31 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   const trend = getHandicapTrend(rounds);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-canvas-cream pb-24">
       {/* Header */}
-      <div className="bg-golf-green safe-pt px-4 pb-8 pt-12 relative overflow-hidden">
+      <div className="bg-canvas-night safe-pt px-4 pb-8 pt-12 relative overflow-hidden">
         {/* Full-width chart behind everything */}
         <TrendSparkline rounds={rounds} handicapIndex={handicapIndex} />
 
         {/* Left fade — keeps text readable */}
         <div className="absolute inset-y-0 left-0 w-[55%] pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to right, #16a34a 50%, transparent)' }} />
+          style={{ background: 'linear-gradient(to right, #000000 50%, transparent)' }} />
 
         {/* Text on top */}
         <div className="relative z-20 flex flex-col items-start">
-          <h1 className="text-white text-5xl font-bold">
+          <h1 className="text-white text-5xl font-light tracking-tight">
             {handicapIndex !== null ? handicapIndex.toFixed(1) : '—'}
           </h1>
-          <p className="text-green-200 text-sm mt-0.5">Handicap Index (WHS)</p>
+          <p className="text-white/50 text-sm mt-0.5">Handicap Index (WHS)</p>
 
           {trend !== null && (
-            <div className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-green-700 text-green-100">
+            <div className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-white/15 text-white/90">
               {trend < 0 ? `↓ ${Math.abs(trend).toFixed(1)} since last round` : trend > 0 ? `↑ ${trend.toFixed(1)} since last round` : 'No change'}
             </div>
           )}
 
           {needed > 0 && (
-            <p className="text-green-200 text-sm mt-2">
+            <p className="text-white/50 text-sm mt-2">
               {needed} more round{needed > 1 ? 's' : ''} needed to establish handicap
             </p>
           )}
@@ -132,7 +132,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
 
       {/* Stats strip */}
       {rounds.length > 0 && (
-        <div className="mx-4 mt-4 bg-white rounded-2xl shadow-sm px-4 py-3 grid grid-cols-3 divide-x divide-gray-100">
+        <div className="mx-4 mt-4 bg-white rounded-xl shadow-card px-4 py-3 grid grid-cols-3 divide-x divide-hairline">
           <div className="text-center pr-4">
             <p className="text-2xl font-bold text-gray-900">{rounds.length}</p>
             <p className="text-xs text-gray-500 mt-0.5">Rounds</p>
@@ -181,18 +181,18 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
           <div className="mx-4 mt-4">
             <button
               onClick={() => navigate('/stats')}
-              className="w-full bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors"
+              className="w-full bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors"
             >
-              <BarChart2 size={18} className="text-golf-green flex-shrink-0" />
+              <BarChart2 size={18} className="text-ink flex-shrink-0" />
               <div className="flex-1 flex gap-4">
                 {items.map(({ label, value }) => (
                   <div key={label}>
-                    <p className="text-xs text-gray-400">{label}</p>
-                    <p className="text-base font-bold text-gray-900">{value}</p>
+                    <p className="text-xs text-shade-50">{label}</p>
+                    <p className="text-base font-bold text-ink">{value}</p>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-1 text-golf-green text-xs font-semibold flex-shrink-0">
+              <div className="flex items-center gap-1 text-ink text-xs font-semibold flex-shrink-0">
                 Stats <ChevronRight size={14} />
               </div>
             </button>
@@ -205,21 +205,21 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base font-semibold text-gray-900">Recent Rounds</h2>
           {rounds.length > 0 && (
-            <button onClick={() => navigate('/history')} className="text-golf-green text-sm font-medium">
+            <button onClick={() => navigate('/history')} className="text-ink text-sm font-medium">
               See all
             </button>
           )}
         </div>
 
         {recent.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+          <div className="bg-white rounded-xl shadow-card p-8 text-center">
             <p className="text-4xl mb-3">⛳</p>
-            <p className="text-gray-500 text-sm">No rounds yet.</p>
-            <p className="text-gray-400 text-xs mt-1">Play a round or upload a scorecard to get started.</p>
+            <p className="text-shade-50 text-sm">No rounds yet.</p>
+            <p className="text-shade-40 text-xs mt-1">Play a round or upload a scorecard to get started.</p>
             {courses.length === 0 && (
               <button
                 onClick={() => navigate('/courses/add')}
-                className="mt-4 inline-flex items-center gap-1 text-golf-green text-sm font-medium"
+                className="mt-4 inline-flex items-center gap-1 text-ink text-sm font-medium"
               >
                 <Plus size={14} /> Add your first course
               </button>
@@ -233,7 +233,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
                 <button
                   key={round.id}
                   onClick={() => navigate(`/history/${round.id}`)}
-                  className="w-full bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors text-left"
+                  className="w-full bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                     <span className="text-lg">⛳</span>

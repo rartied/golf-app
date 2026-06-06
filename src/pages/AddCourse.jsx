@@ -136,7 +136,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
 
   return (
     <div className="min-h-screen bg-canvas-cream pb-24">
-      <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline flex items-center gap-3">
+      <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1 -ml-1">
           <ArrowLeft size={22} className="text-gray-700" />
         </button>

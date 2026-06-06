@@ -93,7 +93,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
   return (
     <div className="min-h-screen bg-canvas-cream pb-24">
       {/* Header */}
-      <div className="bg-canvas-night safe-pt px-4 pt-10 pb-8">
+      <div className="sticky top-0 z-10 bg-canvas-night safe-pt px-4 pt-10 pb-8">
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1 active:opacity-70">
             <ArrowLeft size={22} className="text-white/80" />

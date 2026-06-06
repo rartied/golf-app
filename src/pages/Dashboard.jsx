@@ -101,7 +101,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
   return (
     <div className="min-h-screen bg-canvas-cream pb-24">
       {/* Header */}
-      <div className="bg-canvas-night safe-pt px-4 pb-8 pt-12 relative overflow-hidden">
+      <div className="sticky top-0 z-10 bg-canvas-night safe-pt px-4 pb-8 pt-12 relative overflow-hidden">
         {/* Full-width chart behind everything */}
         <TrendSparkline rounds={rounds} handicapIndex={handicapIndex} />
 

@@ -101,7 +101,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
   if (handicapIndex === null) {
     return (
       <div className="min-h-screen bg-canvas-cream pb-24 flex flex-col">
-        <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
+        <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
           <h1 className="text-2xl font-bold text-gray-900">Stroke Card</h1>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
@@ -117,7 +117,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
   if (courses.length === 0) {
     return (
       <div className="min-h-screen bg-canvas-cream pb-24 flex flex-col">
-        <div className="bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
+        <div className="sticky top-0 z-10 bg-white px-4 safe-pt pt-12 pb-4 border-b border-hairline">
           <h1 className="text-2xl font-bold text-gray-900">Stroke Card</h1>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
@@ -150,7 +150,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
   return (
     <div className="min-h-screen bg-canvas-cream pb-24">
       {/* Header */}
-      <div className="bg-canvas-night safe-pt px-4 pt-12 pb-6">
+      <div className="sticky top-0 z-10 bg-canvas-night safe-pt px-4 pt-12 pb-6">
         <p className="text-white/50 text-sm font-medium">Handicap Index</p>
         <p className="text-white text-5xl font-black leading-none mt-1">{handicapIndex.toFixed(1)}</p>
       </div>

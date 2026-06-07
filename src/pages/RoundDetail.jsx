@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, Trash2, Pencil, X } from 'lucide-react';
+import { ArrowLeft, Trash2, Pencil, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import { useState } from 'react';
 import { calcScoreDifferential, calcAdjustedGrossScore, calcCourseHandicap } from '../utils/handicap';
+import { DirectionPicker, StatTracker, PenaltyPill, dotColor, relativeScore } from '../components/HoleEditor';
 
 export default function RoundDetail({ rounds, deleteRound, updateRound, handicapIndex }) {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
   const [editDate, setEditDate] = useState('');
   const [editScores, setEditScores] = useState([]);
   const [editTotal, setEditTotal] = useState(0);
+  const [editCurrentHole, setEditCurrentHole] = useState(0);
 
   const round = rounds.find(r => r.id === id);
 
@@ -31,6 +33,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
     setEditDate(round.date);
     setEditScores(hasHoleScores ? round.holeScores.map(h => ({ ...h })) : []);
     setEditTotal(round.totalScore);
+    setEditCurrentHole(0);
     setEditing(true);
     window.scrollTo(0, 0);
   }
@@ -43,6 +46,10 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
     setEditScores(prev => prev.map((h, i) =>
       i !== idx ? h : { ...h, score: Math.max(1, Math.min(h.score + delta, h.par + 8)) }
     ));
+  }
+
+  function updateEditStat(idx, stat, value) {
+    setEditScores(prev => prev.map((h, i) => i !== idx ? h : { ...h, [stat]: value }));
   }
 
   function saveEdit() {
@@ -185,49 +192,119 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
           </div>
         )}
 
-        {/* Edit hole scores */}
-        {editing && hasHoleScores && (
-          <div className="bg-white rounded-xl shadow-card p-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Edit Scores</p>
-            {(isNineHole ? [editScores] : [editScores.slice(0, 9), editScores.slice(9)]).map((nine, nineIdx) => (
-              <div key={nineIdx}>
-                {!isNineHole && (
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest py-2">
-                    {nineIdx === 0 ? 'Front 9' : 'Back 9'}
-                  </p>
-                )}
-                <div className="space-y-1">
-                  {nine.map((h, rel) => {
-                    const idx = isNineHole ? rel : nineIdx * 9 + rel;
-                    const d = h.score - h.par;
-                    return (
-                      <div key={h.number} className="flex items-center gap-3 py-1">
-                        <span className="w-6 text-sm font-bold text-gray-400 text-center flex-shrink-0">{h.number}</span>
-                        <span className="w-12 text-xs text-gray-400 flex-shrink-0">Par {h.par}</span>
-                        <div className="flex items-center gap-3 flex-1 justify-end">
-                          <button
-                            onClick={() => adjustScore(idx, -1)}
-                            className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-lg font-bold text-gray-600 active:bg-gray-200"
-                          >−</button>
-                          <span className={`w-8 text-center text-xl font-black ${
-                            d < 0  ? 'text-green-600' :
-                            d === 0 ? 'text-gray-700' :
-                            d === 1 ? 'text-blue-500' : 'text-red-500'
-                          }`}>{h.score}</span>
-                          <button
-                            onClick={() => adjustScore(idx, 1)}
-                            className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-lg font-bold text-gray-600 active:bg-gray-200"
-                          >+</button>
-                        </div>
-                      </div>
-                    );
-                  })}
+        {/* Edit hole scores — full per-hole UI */}
+        {editing && hasHoleScores && editScores.length > 0 && (() => {
+          const h = editScores[editCurrentHole];
+          const rel = relativeScore(h.score, h.par);
+          const girAchieved = h.greenHit === 'hit' && h.putts != null
+            ? (h.score - h.putts) <= (h.par - 2) : false;
+          return (
+            <>
+              {/* Hole dots */}
+              <div className="bg-canvas-night rounded-xl px-4 py-3 flex flex-col gap-2">
+                <div className="flex gap-1 justify-center flex-wrap">
+                  {editScores.map((eh, i) => (
+                    <button
+                      key={eh.number}
+                      onClick={() => setEditCurrentHole(i)}
+                      className={`rounded-full transition-all ${
+                        i === editCurrentHole
+                          ? `w-4 h-4 ring-2 ring-white ring-offset-1 ring-offset-canvas-night ${dotColor(eh.score, eh.par)}`
+                          : `w-2.5 h-2.5 ${dotColor(eh.score, eh.par)}`
+                      }`}
+                    />
+                  ))}
                 </div>
-                {nineIdx === 0 && !isNineHole && <div className="border-t border-gray-100 my-2" />}
+                <div className="flex items-center justify-between">
+                  <span className="text-white/50 text-xs">Hole {h.number} · Par {h.par}</span>
+                  {h.strokeIndex && <span className="text-white/30 text-xs">SI {h.strokeIndex}</span>}
+                  {girAchieved && <span className="px-2 py-0.5 bg-golf-light text-gray-700 text-xs font-bold rounded-full">GIR ✓</span>}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Score + Putts */}
+              <div className="bg-white rounded-xl shadow-card px-4 py-2">
+                <div className="flex items-stretch gap-4">
+                  <div className="flex-1 flex flex-col items-center">
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Score</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => adjustScore(editCurrentHole, -1)} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none">−</button>
+                      <div className="text-center w-12">
+                        <p className="text-5xl font-black text-gray-900 tabular-nums leading-none">{h.score}</p>
+                      </div>
+                      <button onClick={() => adjustScore(editCurrentHole, 1)} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none">+</button>
+                    </div>
+                    <p className={`text-xs font-semibold mt-1 ${rel.color}`}>{rel.label}</p>
+                  </div>
+                  <div className="w-px bg-gray-100" />
+                  <div className="flex-1 flex flex-col items-center">
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Putts</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateEditStat(editCurrentHole, 'putts', Math.max(0, (h.putts ?? 0) - 1))} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none">−</button>
+                      <div className="text-center w-12">
+                        <p className="text-5xl font-black text-gray-900 tabular-nums leading-none">{h.putts ?? 0}</p>
+                      </div>
+                      <button onClick={() => updateEditStat(editCurrentHole, 'putts', (h.putts ?? 0) + 1)} className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none">+</button>
+                    </div>
+                    <p className="text-xs font-semibold mt-1 text-gray-300">putts</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Direction pickers */}
+              <div className="bg-white rounded-xl shadow-card px-4 py-2">
+                <div className="flex items-center gap-2">
+                  {h.par !== 3 ? (
+                    <DirectionPicker label="Fairway" value={h.fairway} onChange={v => updateEditStat(editCurrentHole, 'fairway', v)} hasLongShort={false} />
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center">
+                      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Fairway</p>
+                      <p className="text-xs text-gray-300 italic py-6">Par 3</p>
+                    </div>
+                  )}
+                  <div className="w-px bg-gray-100 self-stretch mx-1" />
+                  <DirectionPicker label="Green" value={h.greenHit} onChange={v => updateEditStat(editCurrentHole, 'greenHit', v)} hasLongShort={true} />
+                </div>
+              </div>
+
+              {/* Stat trackers + Penalties */}
+              <div className="bg-white rounded-xl shadow-card px-4 py-3 space-y-3">
+                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Stat Trackers</p>
+                <div className="grid grid-cols-4 gap-2">
+                  <StatTracker topLabel="FW" label="Bunker" value={h.fairwayBunkers ?? 0} onChange={v => updateEditStat(editCurrentHole, 'fairwayBunkers', v)} />
+                  <StatTracker topLabel="GS" label="Bunker" value={h.greensideBunkers ?? 0} onChange={v => updateEditStat(editCurrentHole, 'greensideBunkers', v)} />
+                  <StatTracker label="Chip" value={h.chipShots ?? 0} onChange={v => updateEditStat(editCurrentHole, 'chipShots', v)} />
+                  <StatTracker label="Lost Ball" value={h.ballsLost ?? 0} onChange={v => updateEditStat(editCurrentHole, 'ballsLost', v)} />
+                </div>
+                <div className="border-t border-hairline" />
+                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Penalties</p>
+                <div className="flex gap-2">
+                  <PenaltyPill label="Water" value={h.waterHazards ?? 0} onChange={v => updateEditStat(editCurrentHole, 'waterHazards', v)} />
+                  <PenaltyPill label="OB" value={h.outOfBounds ?? 0} onChange={v => updateEditStat(editCurrentHole, 'outOfBounds', v)} />
+                  <PenaltyPill label="Drop" value={h.dropShots ?? 0} onChange={v => updateEditStat(editCurrentHole, 'dropShots', v)} />
+                </div>
+              </div>
+
+              {/* Hole navigation */}
+              <div className="flex gap-3">
+                {editCurrentHole > 0 ? (
+                  <button onClick={() => setEditCurrentHole(i => i - 1)} className="flex-1 bg-white border border-hairline text-gray-700 font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:bg-gray-50">
+                    <ChevronLeft size={18} /> Prev
+                  </button>
+                ) : <div className="flex-1" />}
+                {editCurrentHole < editScores.length - 1 ? (
+                  <button onClick={() => setEditCurrentHole(i => i + 1)} className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:opacity-90">
+                    Next <ChevronRight size={18} />
+                  </button>
+                ) : (
+                  <button onClick={saveEdit} className="flex-1 bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90">
+                    Save Changes
+                  </button>
+                )}
+              </div>
+            </>
+          );
+        })()}
 
         {/* Read-only scorecard */}
         {!editing && hasHoleScores && (
@@ -271,7 +348,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
           </div>
         )}
 
-        {editing && (
+        {editing && !hasHoleScores && (
           <button
             onClick={saveEdit}
             className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90"

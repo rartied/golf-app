@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { ArrowLeft, ChevronLeft, ChevronRight, Flag, Search } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
+import { DirectionPicker, StatTracker, PenaltyPill, dotColor, relativeScore } from '../components/HoleEditor';
 import { storage } from '../utils/storage';
 import {
   calcCourseHandicap,
@@ -11,26 +12,6 @@ import {
 } from '../utils/handicap';
 import { computeRoundStats } from '../utils/roundStats';
 
-function relativeScore(score, par) {
-  const d = score - par;
-  if (d <= -3) return { label: 'Albatross', color: 'text-yellow-500' };
-  if (d === -2) return { label: 'Eagle',    color: 'text-yellow-500' };
-  if (d === -1) return { label: 'Birdie',   color: 'text-green-600'  };
-  if (d === 0)  return { label: 'Par',      color: 'text-gray-500'   };
-  if (d === 1)  return { label: 'Bogey',    color: 'text-blue-500'   };
-  if (d === 2)  return { label: 'Double',   color: 'text-red-500'    };
-  return { label: `+${d}`, color: 'text-red-600' };
-}
-
-function dotColor(score, par) {
-  const d = score - par;
-  if (d <= -2) return 'bg-yellow-400';
-  if (d === -1) return 'bg-green-500';
-  if (d === 0)  return 'bg-white/50';
-  if (d === 1)  return 'bg-blue-400';
-  return 'bg-red-400';
-}
-
 function teeColorHex(color) {
   const map = {
     White: '#e5e7eb', Yellow: '#eab308', Blue: '#3b82f6',
@@ -38,82 +19,6 @@ function teeColorHex(color) {
     Green: '#16a34a', Silver: '#9ca3af',
   };
   return map[color] ?? '#9ca3af';
-}
-
-// SVG ring direction picker helpers
-const DP_S = 130, DP_CX = 65, DP_CY = 65, DP_OR = 63, DP_IR = 36;
-
-function dpPt(r, deg) {
-  const rad = (deg - 90) * Math.PI / 180;
-  return [DP_CX + r * Math.cos(rad), DP_CY + r * Math.sin(rad)];
-}
-
-function dpArc(a1, a2) {
-  const span = (a2 - a1 + 360) % 360;
-  const lg = span > 180 ? 1 : 0;
-  const [ox1, oy1] = dpPt(DP_OR, a1), [ox2, oy2] = dpPt(DP_OR, a2);
-  const [ix2, iy2] = dpPt(DP_IR, a2), [ix1, iy1] = dpPt(DP_IR, a1);
-  const f = n => n.toFixed(2);
-  return `M${f(ox1)},${f(oy1)} A${DP_OR},${DP_OR} 0 ${lg},1 ${f(ox2)},${f(oy2)} L${f(ix2)},${f(iy2)} A${DP_IR},${DP_IR} 0 ${lg},0 ${f(ix1)},${f(iy1)}Z`;
-}
-
-// Fairway: right (top-right), left (top-left), na (bottom) — 3 × 118° with 2° gaps
-const FW_SECTORS  = [
-  { v: 'right', a1: 1,   a2: 119 },
-  { v: 'na',    a1: 121, a2: 239 },
-  { v: 'left',  a1: 241, a2: 359 },
-];
-// Green: long (top), right, short (bottom), left — 4 × 88° with 2° gaps
-const GRN_SECTORS = [
-  { v: 'long',  a1: 317, a2: 43  },
-  { v: 'right', a1: 47,  a2: 133 },
-  { v: 'short', a1: 137, a2: 223 },
-  { v: 'left',  a1: 227, a2: 313 },
-];
-
-function DirectionPicker({ label, value, onChange, hasLongShort = false }) {
-  function pick(v) { onChange(value === v ? null : v); }
-  const sectors = hasLongShort ? GRN_SECTORS : FW_SECTORS;
-  // centroid of na arc for × label: mid-angle 180°, mid-radius avg
-  const [naX, naY] = dpPt((DP_OR + DP_IR) / 2, 180);
-
-  return (
-    <div className="flex-1 flex flex-col items-center">
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-      <div className="relative" style={{ width: DP_S, height: DP_S }}>
-        <svg width={DP_S} height={DP_S} className="absolute inset-0">
-          {sectors.map(({ v, a1, a2 }) => (
-            <path
-              key={v}
-              d={dpArc(a1, a2)}
-              fill={value === v ? '#000000' : '#f3f4f6'}
-              onClick={() => pick(v)}
-              style={{ cursor: 'pointer' }}
-            />
-          ))}
-          {/* × label inside na sector for fairway */}
-          {!hasLongShort && (
-            <text
-              x={naX.toFixed(1)} y={(naY + 4).toFixed(1)}
-              textAnchor="middle" fontSize="11" fontWeight="700"
-              fill={value === 'na' ? 'white' : '#d1d5db'}
-              style={{ pointerEvents: 'none', userSelect: 'none' }}
-            >×</text>
-          )}
-        </svg>
-        {/* Centre HIT button */}
-        <button
-          onClick={() => pick('hit')}
-          style={{ position: 'absolute', left: DP_CX - DP_IR, top: DP_CY - DP_IR, width: DP_IR * 2, height: DP_IR * 2, borderRadius: '50%' }}
-          className={`flex items-center justify-center text-sm font-black transition-all bg-golf-green text-white ${
-            value === 'hit' ? 'shadow-md scale-105' : 'opacity-60 active:opacity-80'
-          }`}
-        >
-          {value === 'hit' ? '✓' : 'HIT'}
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function StatTracker({ topLabel, label, value, onChange }) {

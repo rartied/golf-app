@@ -4,7 +4,7 @@
 export function computeRoundStats(holes) {
   const withPutts   = holes.filter(h => h.putts != null);
   const withFairway = holes.filter(h => h.fairway != null && h.fairway !== 'na');
-  const withGreen   = holes.filter(h => h.greenHit != null && h.greenHit !== 'na');
+  const withGreen   = holes.filter(h => h.greenHit != null);
 
   const totalPutts    = withPutts.reduce((s, h) => s + h.putts, 0);
   const fairwaysHit   = withFairway.filter(h => h.fairway === 'hit').length;

@@ -52,20 +52,13 @@ export function DirectionPicker({ label, value, onChange, hasLongShort = false }
   function pick(v) { onChange(value === v ? null : v); }
   const sectors = hasLongShort ? GRN_SECTORS : FW_SECTORS;
   const [naX, naY] = dpPt((DP_OR + DP_IR) / 2, 180);
-  const isNa = value === 'na';
   return (
     <div className="flex-1 flex flex-col items-center">
       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
       <div className="relative" style={{ width: DP_S, height: DP_S }}>
         <svg width={DP_S} height={DP_S} className="absolute inset-0">
           {sectors.map(({ v, a1, a2 }) => (
-            <path
-              key={v}
-              d={dpArc(a1, a2)}
-              fill={!isNa && value === v ? '#000000' : '#f3f4f6'}
-              onClick={() => !isNa && pick(v)}
-              style={{ cursor: isNa ? 'default' : 'pointer', opacity: isNa ? 0.4 : 1 }}
-            />
+            <path key={v} d={dpArc(a1, a2)} fill={value === v ? '#000000' : '#f3f4f6'} onClick={() => pick(v)} style={{ cursor: 'pointer' }} />
           ))}
           {!hasLongShort && (
             <text x={naX.toFixed(1)} y={(naY + 4).toFixed(1)} textAnchor="middle" fontSize="11" fontWeight="700"
@@ -73,29 +66,15 @@ export function DirectionPicker({ label, value, onChange, hasLongShort = false }
           )}
         </svg>
         <button
-          onClick={() => !isNa && pick('hit')}
+          onClick={() => pick('hit')}
           style={{ position: 'absolute', left: DP_CX - DP_IR, top: DP_CY - DP_IR, width: DP_IR * 2, height: DP_IR * 2, borderRadius: '50%' }}
-          className={`flex items-center justify-center text-sm font-black transition-all ${
-            isNa
-              ? 'bg-gray-200 text-gray-400'
-              : value === 'hit'
-              ? 'bg-golf-green text-white shadow-md scale-105'
-              : 'bg-golf-green text-white opacity-60 active:opacity-80'
+          className={`flex items-center justify-center text-sm font-black transition-all bg-golf-green text-white ${
+            value === 'hit' ? 'shadow-md scale-105' : 'opacity-60 active:opacity-80'
           }`}
         >
           {value === 'hit' ? '✓' : 'HIT'}
         </button>
       </div>
-      {hasLongShort && (
-        <button
-          onClick={() => onChange(isNa ? null : 'na')}
-          className={`mt-1.5 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all ${
-            isNa ? 'bg-canvas-night text-white' : 'bg-gray-100 text-gray-400'
-          }`}
-        >
-          N/A
-        </button>
-      )}
     </div>
   );
 }

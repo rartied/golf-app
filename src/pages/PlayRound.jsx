@@ -488,7 +488,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
               )}
               <div className="w-px bg-gray-100 self-stretch mx-1" />
               <DirectionPicker
-                label="Green"
+                label="GIR"
                 value={hole.greenHit}
                 onChange={v => updateHoleStat(currentHole, 'greenHit', v)}
                 hasLongShort={true}

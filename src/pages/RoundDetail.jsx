@@ -187,7 +187,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
                 </div>
               )}
               <div className="w-px bg-gray-100 self-stretch mx-1" />
-              <DirectionPicker label="Green" value={h.greenHit} onChange={v => updateEditStat(editCurrentHole, 'greenHit', v)} hasLongShort={true} />
+              <DirectionPicker label="GIR" value={h.greenHit} onChange={v => updateEditStat(editCurrentHole, 'greenHit', v)} hasLongShort={true} />
             </div>
           </div>
 

@@ -144,8 +144,8 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
           </div>
         </div>
 
-        {/* Scrollable cards */}
-        <div className="flex-1 overflow-y-auto px-3 py-1.5 space-y-1.5">
+        {/* Cards + nav — evenly spaced, no scroll */}
+        <div className="flex-1 flex flex-col justify-evenly px-3">
           {/* Score + Putts */}
           <div className="bg-white rounded-xl shadow-card px-4 py-2">
             <div className="flex items-stretch gap-4">
@@ -210,7 +210,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
           </div>
 
           {/* Hole navigation */}
-          <div className="flex gap-3 safe-pb pb-3">
+          <div className="flex gap-3">
             {editCurrentHole > 0 ? (
               <button onClick={() => setEditCurrentHole(i => i - 1)} className="flex-1 bg-white border border-hairline text-gray-700 font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:bg-gray-50">
                 <ChevronLeft size={18} /> Prev

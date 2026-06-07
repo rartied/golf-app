@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
+import { useAuth } from './hooks/useAuth'
 import { useAppData } from './hooks/useAppData'
 import Navigation from './components/Navigation'
+import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import PlayRound from './pages/PlayRound'
 import History from './pages/History'
@@ -15,7 +17,7 @@ function LoadingScreen() {
   return (
     <div className="h-dvh bg-canvas-cream flex flex-col items-center justify-center gap-4">
       <p className="text-4xl">⛳</p>
-      <p className="text-gray-500 text-sm font-medium">Loading your data…</p>
+      <p className="text-gray-500 text-sm font-medium">Loading…</p>
     </div>
   )
 }
@@ -39,10 +41,14 @@ function ErrorScreen({ message }) {
 }
 
 export default function App() {
-  const data = useAppData()
+  const { session, user, signOut } = useAuth()
+  const data = useAppData(user)
   const location = useLocation()
   const [courseSort, setCourseSort] = useState(null)
   const [courseSearch, setCourseSearch] = useState('')
+
+  if (session === undefined) return <LoadingScreen />
+  if (!session) return <Login />
 
   if (data.loading) return <LoadingScreen />
   if (data.error)   return <ErrorScreen message={data.error} />
@@ -53,7 +59,7 @@ export default function App() {
     <div className="h-dvh flex flex-col">
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <Routes>
-          <Route path="/" element={<Dashboard {...data} />} />
+          <Route path="/" element={<Dashboard {...data} onSignOut={signOut} />} />
           <Route path="/play" element={<PlayRound {...data} />} />
           <Route path="/history" element={<History {...data} />} />
           <Route path="/history/:id" element={<RoundDetail {...data} />} />

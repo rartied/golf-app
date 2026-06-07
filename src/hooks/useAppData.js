@@ -44,13 +44,15 @@ function roundToRow(round) {
   };
 }
 
-export function useAppData() {
+export function useAppData(user) {
   const [rounds, setRounds] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
     async function load() {
       try {
         const [{ data: roundsData, error: re }, { data: coursesData, error: ce }] = await Promise.all([
@@ -59,20 +61,23 @@ export function useAppData() {
         ]);
         if (re) throw re;
         if (ce) throw ce;
-        setRounds((roundsData ?? []).map(rowToRound));
-        setCourses(coursesData ?? []);
+        if (!cancelled) {
+          setRounds((roundsData ?? []).map(rowToRound));
+          setCourses(coursesData ?? []);
+        }
       } catch (err) {
-        setError(err.message ?? 'Failed to load data');
+        if (!cancelled) setError(err.message ?? 'Failed to load data');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
-  }, []);
+    return () => { cancelled = true; };
+  }, [user]);
 
   const addRound = useCallback(async (round) => {
-    setRounds(prev => [round, ...prev]); // optimistic
-    const { data, error } = await supabase.from('rounds').insert([roundToRow(round)]).select().single();
+    setRounds(prev => [round, ...prev]);
+    const { data, error } = await supabase.from('rounds').insert([{ ...roundToRow(round), user_id: user?.id }]).select().single();
     if (error) {
       setRounds(prev => prev.filter(r => r.id !== round.id)); // rollback
       console.error('Failed to save round', error);

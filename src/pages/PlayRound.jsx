@@ -21,58 +21,6 @@ function teeColorHex(color) {
   return map[color] ?? '#9ca3af';
 }
 
-function StatTracker({ topLabel, label, value, onChange }) {
-  const active = value > 0;
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <button
-        onClick={() => onChange(value + 1)}
-        className={`relative w-full aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
-          active ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-50'
-        }`}
-      >
-        {topLabel && (
-          <span className={`text-[9px] font-bold uppercase leading-none ${active ? 'text-golf-green' : 'text-gray-400'}`}>
-            {topLabel}
-          </span>
-        )}
-        <span className={`text-2xl font-black leading-none tabular-nums ${active ? 'text-golf-green' : 'text-gray-700'}`}>
-          {value}
-        </span>
-        {active && (
-          <button
-            onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
-            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-400 text-white text-xs font-bold rounded-full flex items-center justify-center"
-          >−</button>
-        )}
-      </button>
-      <span className={`text-[9px] font-semibold uppercase tracking-wide text-center leading-tight ${active ? 'text-golf-green' : 'text-gray-400'}`}>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function PenaltyPill({ label, value, onChange }) {
-  const active = value > 0;
-  return (
-    <button
-      onClick={() => onChange(value + 1)}
-      className={`relative flex-1 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all active:scale-95 ${
-        active ? 'bg-canvas-night text-white' : 'bg-white border border-hairline text-gray-500'
-      }`}
-    >
-      {label}{active ? ` · ${value}` : ''}
-      {active && (
-        <button
-          onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
-          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-400 text-white text-xs font-bold rounded-full flex items-center justify-center"
-        >−</button>
-      )}
-    </button>
-  );
-}
-
 function buildHoleScores(course, tee, nineHoleType) {
   let holes;
   if (course.holes?.length === 18) {

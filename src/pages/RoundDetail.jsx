@@ -208,11 +208,9 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
               <PenaltyPill label="Drop" value={h.dropShots ?? 0} onChange={v => updateEditStat(editCurrentHole, 'dropShots', v)} />
             </div>
           </div>
-        </div>
 
-        {/* Hole navigation */}
-        <div className="px-4 pt-1 pb-3 safe-pb flex-shrink-0 bg-canvas-cream">
-          <div className="flex gap-3">
+          {/* Hole navigation */}
+          <div className="flex gap-3 safe-pb pb-3">
             {editCurrentHole > 0 ? (
               <button onClick={() => setEditCurrentHole(i => i - 1)} className="flex-1 bg-white border border-hairline text-gray-700 font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:bg-gray-50">
                 <ChevronLeft size={18} /> Prev

@@ -146,7 +146,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
 
         {/* Cards + nav */}
         <div className="flex-1 flex flex-col gap-1.5 px-3">
-          <div className="flex-1" />
+          <div className="flex-[0.5]" />
           {/* Score + Putts */}
           <div className="bg-white rounded-xl shadow-card px-4 py-2">
             <div className="flex items-stretch gap-4">
@@ -227,7 +227,7 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
               </button>
             )}
           </div>
-          <div className="flex-1" />
+          <div className="flex-[0.5]" />
         </div>
       </div>
     );

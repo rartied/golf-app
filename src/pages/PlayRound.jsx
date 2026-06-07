@@ -411,7 +411,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
 
         {/* Cards + nav */}
         <div className="flex-1 flex flex-col gap-1.5 px-3">
-          <div className="flex-1" />
+          <div className="flex-[0.5]" />
 
           {/* Score + Putts */}
           <div className="bg-white rounded-xl shadow-card px-4 py-2">
@@ -550,7 +550,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
               </button>
             )}
           </div>
-          <div className="flex-1" />
+          <div className="flex-[0.5]" />
         </div>
       </div>
     );

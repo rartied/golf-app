@@ -409,8 +409,9 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           </div>
         </div>
 
-        {/* Cards + nav — evenly spaced, no scroll */}
-        <div className="flex-1 flex flex-col justify-evenly px-3">
+        {/* Cards + nav */}
+        <div className="flex-1 flex flex-col gap-1.5 px-3">
+          <div className="flex-1" />
 
           {/* Score + Putts */}
           <div className="bg-white rounded-xl shadow-card px-4 py-2">
@@ -549,6 +550,7 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
               </button>
             )}
           </div>
+          <div className="flex-1" />
         </div>
       </div>
     );

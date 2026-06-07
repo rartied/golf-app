@@ -196,12 +196,13 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
     const holesPlayed = nineHoleType ? 9 : 18;
     const totalScore  = holeScores.reduce((s, h) => s + h.score, 0);
     const coursePar   = holeScores.reduce((s, h) => s + h.par, 0);
-    const courseHandicap = handicapIndex !== null
+    const established = handicapIndex !== null;
+    const courseHandicap = established
       ? calcCourseHandicap(handicapIndex, selectedTee.slope, selectedTee.rating, selectedTee.par)
       : null;
-    const adjustedGrossScore = courseHandicap !== null
-      ? calcAdjustedGrossScore(holeScores, courseHandicap, holesPlayed)
-      : totalScore;
+    const adjustedGrossScore = established
+      ? calcAdjustedGrossScore(holeScores, courseHandicap, holesPlayed, true)
+      : calcAdjustedGrossScore(holeScores, 0, holesPlayed, false);
     const scoreDifferential = calcScoreDifferential(
       adjustedGrossScore, selectedTee.rating, selectedTee.slope, holesPlayed, handicapIndex
     );
@@ -611,12 +612,13 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
   const totalScore  = holeScores.reduce((s, h) => s + h.score, 0);
   const coursePar   = holeScores.reduce((s, h) => s + h.par, 0);
   const diff        = totalScore - coursePar;
-  const courseHandicap = handicapIndex !== null
+  const established = handicapIndex !== null;
+  const courseHandicap = established
     ? calcCourseHandicap(handicapIndex, selectedTee.slope, selectedTee.rating, selectedTee.par)
     : null;
-  const adjustedGrossScore = courseHandicap !== null
-    ? calcAdjustedGrossScore(holeScores, courseHandicap, holesPlayed)
-    : totalScore;
+  const adjustedGrossScore = established
+    ? calcAdjustedGrossScore(holeScores, courseHandicap, holesPlayed, true)
+    : calcAdjustedGrossScore(holeScores, 0, holesPlayed, false);
   const scoreDifferential = calcScoreDifferential(
     adjustedGrossScore, selectedTee.rating, selectedTee.slope, holesPlayed, handicapIndex
   );

@@ -57,13 +57,13 @@ export default function RoundDetail({ rounds, deleteRound, updateRound, handicap
       ? editScores.reduce((s, h) => s + h.score, 0)
       : editTotal;
 
-    // For 9-hole rounds, skip AGS cap (course par stored is 9-hole, can't derive 18-hole par for calcCourseHandicap)
-    const courseHandicap = (!isNineHole && handicapIndex !== null)
+    const established = handicapIndex !== null;
+    const courseHandicap = (established && !isNineHole)
       ? calcCourseHandicap(handicapIndex, round.slope, round.courseRating, round.coursePar)
       : null;
 
-    const adjustedGrossScore = courseHandicap !== null && hasHoleScores
-      ? calcAdjustedGrossScore(editScores, courseHandicap)
+    const adjustedGrossScore = hasHoleScores
+      ? calcAdjustedGrossScore(editScores, courseHandicap ?? 0, round.holesPlayed ?? 18, established)
       : totalScore;
 
     const scoreDifferential = calcScoreDifferential(

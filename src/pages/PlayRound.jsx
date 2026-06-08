@@ -23,8 +23,9 @@ function teeColorHex(color) {
 
 function buildHoleScores(course, tee, nineHoleType) {
   let holes;
-  if (course.holes?.length === 18) {
-    holes = course.holes.map(h => ({
+  const holeData = tee?.holes?.length === 18 ? tee.holes : course.holes;
+  if (holeData?.length === 18) {
+    holes = holeData.map(h => ({
       number:      h.number,
       par:         h.par,
       strokeIndex: h.strokeIndex,

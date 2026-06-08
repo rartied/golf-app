@@ -6,16 +6,16 @@ import { sharedSupabase } from '../lib/sharedSupabase';
 
 const TEE_COLORS = ['White', 'Yellow', 'Blue', 'Red', 'Gold', 'Black', 'Green', 'Silver', 'Orange', 'Purple'];
 
-function emptyTee() {
-  return { id: uuid(), name: '', color: 'White', rating: '', slope: '', par: 72 };
-}
-
 function emptyHoles() {
   return Array.from({ length: 18 }, (_, i) => ({
     number: i + 1,
     par: 4,
     strokeIndex: null,
   }));
+}
+
+function emptyTee() {
+  return { id: uuid(), name: '', color: 'White', rating: '', slope: '', par: 72, holes: emptyHoles() };
 }
 
 export default function AddCourse({ courses, addCourse, updateCourse }) {
@@ -25,57 +25,69 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
 
   const [name, setName] = useState(existing?.name || '');
   const [location, setLocation] = useState(existing?.location || '');
-  const [tees, setTees] = useState(existing?.tees || [emptyTee()]);
-  const [holes, setHoles] = useState(
-    existing?.holes?.length === 18 ? existing.holes : emptyHoles()
-  );
+  const [tees, setTees] = useState(() => {
+    if (!existing?.tees?.length) return [emptyTee()];
+    return existing.tees.map(t => ({
+      ...t,
+      // Use tee-specific holes if present, otherwise fall back to course-level holes
+      holes: t.holes?.length === 18 ? t.holes : (existing.holes?.length === 18 ? [...existing.holes] : emptyHoles()),
+    }));
+  });
+  const [activeTeeId, setActiveTeeId] = useState(() => tees[0]?.id);
   const [showHoles, setShowHoles] = useState(true);
   const [errors, setErrors] = useState({});
-  const [dupMatches, setDupMatches] = useState(null); // null = no check yet, [] = checked+clear, [...] = matches found
+  const [dupMatches, setDupMatches] = useState(null);
   const [pendingCourse, setPendingCourse] = useState(null);
+
+  const activeTee = tees.find(t => t.id === activeTeeId) ?? tees[0];
 
   function validate() {
     const e = {};
     if (!name.trim()) e.name = 'Course name is required';
 
-    const holeParSum = holes.reduce((s, h) => s + h.par, 0);
     tees.forEach((t, i) => {
       if (!t.rating || isNaN(t.rating)) e[`tee_rating_${i}`] = 'Required';
       if (!t.slope || isNaN(t.slope) || t.slope < 55 || t.slope > 155) e[`tee_slope_${i}`] = '55–155';
+
+      const holeParSum = t.holes.reduce((s, h) => s + h.par, 0);
       const teePar = parseInt(t.par);
       if (!isNaN(teePar) && holeParSum !== teePar) {
-        e[`tee_par_${i}`] = `Hole pars total ${holeParSum}, but this tee is par ${teePar}`;
+        e[`tee_par_${i}`] = `Hole pars total ${holeParSum}, but tee par is ${teePar}`;
+      }
+
+      const siValues = t.holes.map(h => h.strokeIndex);
+      if (siValues.some(v => v === null)) {
+        e[`tee_holes_si_${i}`] = 'All 18 holes must have an SI value (1–18)';
+      } else {
+        const seen = new Set();
+        let dup = null;
+        for (const v of siValues) {
+          if (seen.has(v)) { dup = v; break; }
+          seen.add(v);
+        }
+        if (dup !== null) e[`tee_holes_si_${i}`] = `SI ${dup} used more than once`;
       }
     });
-
-    const siValues = holes.map(h => h.strokeIndex);
-    if (siValues.some(v => v === null)) {
-      e.holes_si = 'All 18 holes must have an SI value set (1–18)';
-    } else {
-      const seen = new Set();
-      let dup = null;
-      for (const v of siValues) {
-        if (seen.has(v)) { dup = v; break; }
-        seen.add(v);
-      }
-      if (dup !== null) e.holes_si = `SI ${dup} is used more than once — each value 1–18 must appear exactly once`;
-    }
 
     return e;
   }
 
   function buildCourse() {
+    const mappedTees = tees.map(t => ({
+      id: t.id,
+      name: t.name,
+      color: t.color,
+      rating: parseFloat(t.rating),
+      slope: parseInt(t.slope),
+      par: parseInt(t.par),
+      holes: t.holes,
+    }));
     return {
       id: existing?.id || uuid(),
       name: name.trim(),
       location: location.trim(),
-      tees: tees.map(t => ({
-        ...t,
-        rating: parseFloat(t.rating),
-        slope: parseInt(t.slope),
-        par: parseInt(t.par),
-      })),
-      holes,
+      tees: mappedTees,
+      holes: mappedTees[0]?.holes ?? emptyHoles(), // keep course-level holes for backward compat
     };
   }
 
@@ -89,10 +101,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   async function handleSave() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
-
     const course = buildCourse();
-
-    // Skip duplicate check when editing an existing course
     if (existing) { commitSave(course); return; }
 
     const { data } = await sharedSupabase
@@ -120,19 +129,39 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
     setPendingCourse(null);
   }
 
-  function addTee() { setTees(t => [...t, emptyTee()]); }
-  function removeTee(id) { setTees(t => t.filter(x => x.id !== id)); }
+  function addTee() {
+    const t = emptyTee();
+    setTees(prev => [...prev, t]);
+    setActiveTeeId(t.id);
+  }
+
+  function removeTee(id) {
+    setTees(prev => {
+      const next = prev.filter(x => x.id !== id);
+      if (activeTeeId === id) setActiveTeeId(next[0]?.id);
+      return next;
+    });
+  }
+
   function updateTee(id, field, val) {
     setTees(t => t.map(x => x.id === id ? { ...x, [field]: val } : x));
   }
 
   function updateHolePar(idx, par) {
-    setHoles(h => h.map((hole, i) => i === idx ? { ...hole, par } : hole));
+    setTees(ts => ts.map(t => t.id === activeTeeId
+      ? { ...t, holes: t.holes.map((h, i) => i === idx ? { ...h, par } : h) }
+      : t
+    ));
   }
 
   function updateHoleSI(idx, val) {
-    setHoles(h => h.map((hole, i) => i === idx ? { ...hole, strokeIndex: val } : hole));
+    setTees(ts => ts.map(t => t.id === activeTeeId
+      ? { ...t, holes: t.holes.map((h, i) => i === idx ? { ...h, strokeIndex: val } : h) }
+      : t
+    ));
   }
+
+  const activeTeeIndex = tees.findIndex(t => t.id === activeTeeId);
 
   return (
     <div className="min-h-full bg-canvas-cream">
@@ -192,7 +221,6 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   />
                 </div>
                 <div>
-                  {/* datalist lets user pick a preset or type any custom color */}
                   <label className="text-xs text-gray-400 mb-1 block">Color *</label>
                   <input
                     list={`tee-colors-${tee.id}`}
@@ -208,9 +236,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Course Rating *</label>
                   <input
-                    type="number"
-                    step="0.1"
-                    inputMode="decimal"
+                    type="number" step="0.1" inputMode="decimal"
                     className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_rating_${i}`] ? 'border-red-400' : 'border-hairline'}`}
                     value={tee.rating}
                     onChange={e => { updateTee(tee.id, 'rating', e.target.value); setErrors(x => ({ ...x, [`tee_rating_${i}`]: '' })); }}
@@ -221,8 +247,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Slope (55–155) *</label>
                   <input
-                    type="number"
-                    inputMode="numeric"
+                    type="number" inputMode="numeric"
                     className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_slope_${i}`] ? 'border-red-400' : 'border-hairline'}`}
                     value={tee.slope}
                     onChange={e => { updateTee(tee.id, 'slope', e.target.value); setErrors(x => ({ ...x, [`tee_slope_${i}`]: '' })); }}
@@ -233,8 +258,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Par</label>
                   <input
-                    type="number"
-                    inputMode="numeric"
+                    type="number" inputMode="numeric"
                     className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-hairline'}`}
                     value={tee.par}
                     onChange={e => { updateTee(tee.id, 'par', e.target.value); setErrors(x => ({ ...x, [`tee_par_${i}`]: '' })); }}
@@ -252,7 +276,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
           </button>
         </div>
 
-        {/* Hole Details */}
+        {/* Hole Details — per tee */}
         <div className="bg-white rounded-xl shadow-card">
           <button
             onClick={() => setShowHoles(s => !s)}
@@ -265,82 +289,91 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
           </button>
 
           {showHoles && (
-            <div className="px-4 pb-5 space-y-6">
-              {[{ label: 'Front 9', start: 0 }, { label: 'Back 9', start: 9 }].map(({ label, start }) => (
-                <div key={label}>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{label}</p>
-                  <div className="space-y-2">
-                    {holes.slice(start, start + 9).map((h, rel) => {
-                      const idx = start + rel;
-                      return (
-                        <div key={h.number} className="flex items-center gap-3">
-                          {/* Hole number */}
-                          <div className="w-7 text-center flex-shrink-0">
-                            <span className="text-sm font-bold text-gray-400">{h.number}</span>
-                          </div>
-
-                          {/* Par — left half decrements, right half increments */}
-                          <button
-                            type="button"
-                            onClick={e => {
-                              const { left, width } = e.currentTarget.getBoundingClientRect();
-                              const isRight = (e.clientX - left) > width / 2;
-                              updateHolePar(idx, isRight
-                                ? Math.min(h.par + 1, 5)
-                                : Math.max(h.par - 1, 3)
-                              );
-                            }}
-                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors select-none ${
-                              h.par === 3 ? 'bg-blue-100 text-blue-700' :
-                              h.par === 5 ? 'bg-amber-100 text-amber-700' :
-                                            'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            Par {h.par}
-                          </button>
-
-                          {/* SI — minus, editable input, plus */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => updateHoleSI(idx, h.strokeIndex === null || h.strokeIndex <= 1 ? null : h.strokeIndex - 1)}
-                              className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
-                            >
-                              −
-                            </button>
-                            <input
-                              type="number"
-                              inputMode="numeric"
-                              min="1"
-                              max="18"
-                              value={h.strokeIndex ?? ''}
-                              onChange={e => {
-                                if (e.target.value === '') { updateHoleSI(idx, null); return; }
-                                const n = parseInt(e.target.value);
-                                if (!isNaN(n) && n >= 1 && n <= 18) updateHoleSI(idx, n);
-                              }}
-                              placeholder="—"
-                              className="w-9 h-10 text-center text-sm font-bold text-gray-700 bg-transparent border-0 outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => updateHoleSI(idx, Math.min((h.strokeIndex ?? 0) + 1, 18))}
-                              className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+            <div className="pb-5">
+              {/* Tee selector — only shown when multiple tees */}
+              {tees.length > 1 && (
+                <div className="px-4 mb-4 flex gap-2 overflow-x-auto pb-1">
+                  {tees.map((t, i) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setActiveTeeId(t.id)}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                        t.id === activeTeeId
+                          ? 'bg-canvas-night text-white'
+                          : 'bg-gray-100 text-gray-500 active:bg-gray-200'
+                      }`}
+                    >
+                      {t.name || `Tee ${i + 1}`}
+                    </button>
+                  ))}
                 </div>
-              ))}
-              <p className="text-xs text-gray-400">Par: tap left ← to lower, right → to raise · SI: tap or type</p>
+              )}
+
+              <div className="px-4 space-y-6">
+                {[{ label: 'Front 9', start: 0 }, { label: 'Back 9', start: 9 }].map(({ label, start }) => (
+                  <div key={label}>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{label}</p>
+                    <div className="space-y-2">
+                      {(activeTee?.holes ?? emptyHoles()).slice(start, start + 9).map((h, rel) => {
+                        const idx = start + rel;
+                        return (
+                          <div key={h.number} className="flex items-center gap-3">
+                            <div className="w-7 text-center flex-shrink-0">
+                              <span className="text-sm font-bold text-gray-400">{h.number}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={e => {
+                                const { left, width } = e.currentTarget.getBoundingClientRect();
+                                const isRight = (e.clientX - left) > width / 2;
+                                updateHolePar(idx, isRight ? Math.min(h.par + 1, 5) : Math.max(h.par - 1, 3));
+                              }}
+                              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors select-none ${
+                                h.par === 3 ? 'bg-blue-100 text-blue-700' :
+                                h.par === 5 ? 'bg-amber-100 text-amber-700' :
+                                              'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              Par {h.par}
+                            </button>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => updateHoleSI(idx, h.strokeIndex === null || h.strokeIndex <= 1 ? null : h.strokeIndex - 1)}
+                                className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
+                              >−</button>
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                min="1" max="18"
+                                value={h.strokeIndex ?? ''}
+                                onChange={e => {
+                                  if (e.target.value === '') { updateHoleSI(idx, null); return; }
+                                  const n = parseInt(e.target.value);
+                                  if (!isNaN(n) && n >= 1 && n <= 18) updateHoleSI(idx, n);
+                                }}
+                                placeholder="—"
+                                className="w-9 h-10 text-center text-sm font-bold text-gray-700 bg-transparent border-0 outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => updateHoleSI(idx, Math.min((h.strokeIndex ?? 0) + 1, 18))}
+                                className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
+                              >+</button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-xs text-gray-400">Par: tap left ← to lower, right → to raise · SI: tap or type</p>
+              </div>
+
+              {errors[`tee_holes_si_${activeTeeIndex}`] && (
+                <p className="text-red-500 text-xs px-4 pt-2">{errors[`tee_holes_si_${activeTeeIndex}`]}</p>
+              )}
             </div>
-          )}
-          {errors.holes_si && (
-            <p className="text-red-500 text-xs px-4 pb-3">{errors.holes_si}</p>
           )}
         </div>
 
@@ -371,16 +404,10 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
               ))}
             </div>
             <div className="space-y-2">
-              <button
-                onClick={cancelDuplicate}
-                className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90"
-              >
+              <button onClick={cancelDuplicate} className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90">
                 Cancel — don't add
               </button>
-              <button
-                onClick={confirmDuplicate}
-                className="w-full bg-white border border-hairline text-gray-600 font-semibold py-3.5 rounded-full active:bg-gray-50"
-              >
+              <button onClick={confirmDuplicate} className="w-full bg-white border border-hairline text-gray-600 font-semibold py-3.5 rounded-full active:bg-gray-50">
                 Add anyway
               </button>
             </div>

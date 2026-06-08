@@ -293,6 +293,7 @@ export default function Stats({ rounds }) {
     withBalls.length > 0 && {
       label: 'Balls / Round',
       value: avgBalls != null ? avgBalls.toFixed(1) : null,
+      sub: `${withBalls.length} round${withBalls.length !== 1 ? 's' : ''}`,
       improving: ballsImproving,
       points: withBalls.map(r => ({ date: r.date, v: r.stats.ballsLost })),
       avg: avgBalls,

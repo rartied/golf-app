@@ -83,27 +83,31 @@ export function StatTracker({ topLabel, label, value, onChange }) {
   const active = value > 0;
   return (
     <div className="flex flex-col items-center gap-1">
-      <button
-        onClick={() => onChange(value + 1)}
-        className={`relative w-full aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
-          active ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-50'
-        }`}
-      >
-        {topLabel && (
-          <span className={`text-[9px] font-bold uppercase leading-none ${active ? 'text-golf-green' : 'text-gray-400'}`}>
-            {topLabel}
+      <div className={`w-full aspect-square rounded-2xl flex flex-col overflow-hidden transition-all ${
+        active ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-50'
+      }`}>
+        <button
+          onClick={() => onChange(value + 1)}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 active:opacity-70 select-none"
+        >
+          {topLabel && (
+            <span className={`text-[9px] font-bold uppercase leading-none ${active ? 'text-golf-green' : 'text-gray-400'}`}>
+              {topLabel}
+            </span>
+          )}
+          <span className={`text-2xl font-black leading-none tabular-nums ${active ? 'text-golf-green' : 'text-gray-700'}`}>
+            {value}
           </span>
-        )}
-        <span className={`text-2xl font-black leading-none tabular-nums ${active ? 'text-golf-green' : 'text-gray-700'}`}>
-          {value}
-        </span>
+        </button>
         {active && (
           <button
             onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
-            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-400 text-white text-xs font-bold rounded-full flex items-center justify-center"
-          >−</button>
+            className="w-full bg-golf-green/20 py-2 flex items-center justify-center active:bg-golf-green/40 select-none"
+          >
+            <span className="text-golf-green text-base font-bold leading-none">−</span>
+          </button>
         )}
-      </button>
+      </div>
       <span className={`text-[9px] font-semibold uppercase tracking-wide text-center leading-tight ${active ? 'text-golf-green' : 'text-gray-400'}`}>
         {label}
       </span>
@@ -113,20 +117,29 @@ export function StatTracker({ topLabel, label, value, onChange }) {
 
 export function PenaltyPill({ label, value, onChange }) {
   const active = value > 0;
+  if (!active) {
+    return (
+      <button
+        onClick={() => onChange(1)}
+        className="flex-1 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all active:scale-95 bg-white border border-hairline text-gray-500"
+      >
+        {label}
+      </button>
+    );
+  }
   return (
-    <button
-      onClick={() => onChange(value + 1)}
-      className={`relative flex-1 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all active:scale-95 ${
-        active ? 'bg-canvas-night text-white' : 'bg-white border border-hairline text-gray-500'
-      }`}
-    >
-      {label}{active ? ` · ${value}` : ''}
-      {active && (
-        <button
-          onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
-          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-400 text-white text-xs font-bold rounded-full flex items-center justify-center"
-        >−</button>
-      )}
-    </button>
+    <div className="flex-1 flex items-center bg-canvas-night rounded-full overflow-hidden">
+      <button
+        onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
+        className="px-4 py-2.5 text-white text-base font-bold leading-none active:opacity-60 select-none"
+      >−</button>
+      <span className="flex-1 text-center text-xs font-bold uppercase tracking-wide text-white pointer-events-none select-none">
+        {label} · {value}
+      </span>
+      <button
+        onPointerDown={e => { e.stopPropagation(); onChange(value + 1); }}
+        className="px-4 py-2.5 text-white text-base font-bold leading-none active:opacity-60 select-none"
+      >+</button>
+    </div>
   );
 }

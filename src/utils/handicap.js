@@ -12,7 +12,14 @@ export function teeRatingSlope(tee, gender = 'mens') {
   const sk = gender === 'womens' ? 'womensSlope'  : 'mensSlope';
   const r = tee[rk], s = tee[sk];
   if (r != null && r !== '' && s != null && s !== '') return { rating: Number(r), slope: Number(s) };
-  if (gender === 'womens' && tee.rating != null && tee.rating !== '' && tee.slope != null && tee.slope !== '') {
+  // Pre-split tees stored a single rating/slope (entered for women's). Only use
+  // it for women's, and only when the tee has NO explicit gendered ratings — on
+  // newer tees `rating`/`slope` is just a mirror of whichever gender was set, so
+  // surfacing it would leak e.g. a men's-only tee into the women's list.
+  const hasGendered = [tee.mensRating, tee.mensSlope, tee.womensRating, tee.womensSlope]
+    .some(v => v != null && v !== '');
+  if (gender === 'womens' && !hasGendered
+      && tee.rating != null && tee.rating !== '' && tee.slope != null && tee.slope !== '') {
     return { rating: Number(tee.rating), slope: Number(tee.slope) };
   }
   return { rating: null, slope: null };

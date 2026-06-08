@@ -1,23 +1,37 @@
 // World Handicap System (WHS 2024) calculations
 
 // Resolve a tee's course rating + slope for the given player gender ('mens' |
-// 'womens'). Tees may carry separate men's/women's values; we prefer the
-// requested gender, fall back to the other gender, then to the legacy single
-// rating/slope fields used by tees created before this split. Returns numbers
-// (or null) so callers can feed calcCourseHandicap / calcScoreDifferential.
+// 'womens'), STRICTLY — a tee only counts for a gender if it actually has that
+// gender's values (no cross-gender fallback), so the round-setup tee list can
+// filter by gender. Returns { rating: null } when the tee has no data for that
+// gender. Legacy single rating/slope (pre gender-split) was entered for women's
+// tees, so it surfaces for women's only.
 export function teeRatingSlope(tee, gender = 'mens') {
   if (!tee) return { rating: null, slope: null };
-  const order = gender === 'womens'
-    ? [['womensRating', 'womensSlope'], ['mensRating', 'mensSlope']]
-    : [['mensRating', 'mensSlope'], ['womensRating', 'womensSlope']];
-  for (const [rk, sk] of order) {
-    const r = tee[rk], s = tee[sk];
-    if (r != null && r !== '' && s != null && s !== '') return { rating: Number(r), slope: Number(s) };
-  }
-  if (tee.rating != null && tee.rating !== '' && tee.slope != null && tee.slope !== '') {
+  const rk = gender === 'womens' ? 'womensRating' : 'mensRating';
+  const sk = gender === 'womens' ? 'womensSlope'  : 'mensSlope';
+  const r = tee[rk], s = tee[sk];
+  if (r != null && r !== '' && s != null && s !== '') return { rating: Number(r), slope: Number(s) };
+  if (gender === 'womens' && tee.rating != null && tee.rating !== '' && tee.slope != null && tee.slope !== '') {
     return { rating: Number(tee.rating), slope: Number(tee.slope) };
   }
   return { rating: null, slope: null };
+}
+
+// Resolve a tee's per-hole data for the given gender. Stroke index (the per-hole
+// handicap allocation) differs between men's and women's tees, so each hole
+// carries mensStrokeIndex / womensStrokeIndex. Prefer the requested gender, fall
+// back to the other gender, then to the legacy single strokeIndex field. Returns
+// holes shaped { number, par, strokeIndex } for scoring.
+export function teeHoles(tee, gender = 'mens') {
+  const holes = tee?.holes ?? [];
+  const primary = gender === 'womens' ? 'womensStrokeIndex' : 'mensStrokeIndex';
+  const other   = gender === 'womens' ? 'mensStrokeIndex' : 'womensStrokeIndex';
+  return holes.map(h => ({
+    number: h.number,
+    par: h.par,
+    strokeIndex: h[primary] ?? h[other] ?? h.strokeIndex ?? null,
+  }));
 }
 
 // Best differentials to use based on number of scores in record

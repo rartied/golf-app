@@ -5,11 +5,38 @@ import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
 const TEE_COLORS = ['Gold', 'Red', 'Green', 'White', 'Blue', 'Black', 'Yellow', 'Orange', 'Purple', 'Silver'];
 
+function teeColorHex(color) {
+  const map = {
+    Gold: '#d4af37', Red: '#ef4444', Green: '#16a34a', White: '#e5e7eb',
+    Blue: '#3b82f6', Black: '#1f2937', Yellow: '#eab308', Orange: '#f97316',
+    Purple: '#a855f7', Silver: '#9ca3af',
+  };
+  return map[color] ?? '#9ca3af';
+}
+
+function teeChipLabel(t) {
+  if (t?.name?.trim()) return t.name.trim();
+  return t?.color2 ? `${t.color}/${t.color2}` : (t?.color ?? 'Tee');
+}
+
 function emptyHoles() {
   return Array.from({ length: 18 }, (_, i) => ({
     number: i + 1,
     par: 4,
-    strokeIndex: null,
+    mensStrokeIndex: null,
+    womensStrokeIndex: null,
+  }));
+}
+
+// Normalise a holes array to the gendered shape. Legacy single strokeIndex was
+// entered for women's tees, so it seeds womensStrokeIndex.
+function toGenderedHoles(src) {
+  const base = src?.length === 18 ? src : emptyHoles();
+  return base.map((h, i) => ({
+    number: h.number ?? i + 1,
+    par: h.par ?? 4,
+    mensStrokeIndex: h.mensStrokeIndex ?? null,
+    womensStrokeIndex: h.womensStrokeIndex ?? h.strokeIndex ?? null,
   }));
 }
 
@@ -43,10 +70,12 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
       womensSlope:  t.womensSlope  ?? t.slope  ?? '',
       par: t.par ?? 72,
       // Use tee-specific holes if present, otherwise fall back to course-level holes
-      holes: t.holes?.length === 18 ? t.holes : (existing.holes?.length === 18 ? [...existing.holes] : emptyHoles()),
+      holes: toGenderedHoles(t.holes?.length === 18 ? t.holes : (existing.holes?.length === 18 ? existing.holes : null)),
     }));
   });
   const [activeTeeId, setActiveTeeId] = useState(() => tees[0]?.id);
+  // Which gender's rating/slope + stroke index the active tee editor is showing.
+  const [editGender, setEditGender] = useState('womens');
   const [showHoles, setShowHoles] = useState(true);
   const [errors, setErrors] = useState({});
   const [dupMatches, setDupMatches] = useState(null);
@@ -80,17 +109,21 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
         e[`tee_par_${i}`] = `Hole pars total ${holeParSum}, but tee par is ${teePar}`;
       }
 
-      const siValues = t.holes.map(h => h.strokeIndex);
-      if (siValues.some(v => v === null)) {
-        e[`tee_holes_si_${i}`] = 'All 18 holes must have an SI value (1–18)';
-      } else {
+      // Each rated gender needs a complete, unique 1–18 stroke-index set.
+      for (const key of ['mens', 'womens']) {
+        const rated = t[`${key}Rating`] !== '' && t[`${key}Rating`] != null
+                   && t[`${key}Slope`] !== '' && t[`${key}Slope`] != null;
+        if (!rated) continue;
+        const label = key === 'mens' ? "Men's" : "Women's";
+        const si = t.holes.map(h => h[`${key}StrokeIndex`]);
+        if (si.some(v => v === null || v === undefined || v === '')) {
+          e[`tee_${key}_si_${i}`] = `All 18 holes need a ${label} SI (1–18)`;
+          continue;
+        }
         const seen = new Set();
         let dup = null;
-        for (const v of siValues) {
-          if (seen.has(v)) { dup = v; break; }
-          seen.add(v);
-        }
-        if (dup !== null) e[`tee_holes_si_${i}`] = `SI ${dup} used more than once`;
+        for (const v of si) { if (seen.has(v)) { dup = v; break; } seen.add(v); }
+        if (dup !== null) e[`tee_${key}_si_${i}`] = `${label} SI ${dup} used more than once`;
       }
     });
 
@@ -115,7 +148,18 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
         rating: womensRating ?? mensRating,
         slope:  womensSlope  ?? mensSlope,
         par: parseInt(t.par),
-        holes: t.holes,
+        holes: t.holes.map(h => {
+          const mensSI   = numI(h.mensStrokeIndex);
+          const womensSI = numI(h.womensStrokeIndex);
+          return {
+            number: h.number,
+            par: h.par,
+            mensStrokeIndex: mensSI,
+            womensStrokeIndex: womensSI,
+            // Legacy mirror (prefer women's) for any older consumer.
+            strokeIndex: womensSI ?? mensSI,
+          };
+        }),
       };
     });
     return {
@@ -190,8 +234,9 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   }
 
   function updateHoleSI(idx, val) {
+    const field = `${editGender}StrokeIndex`;
     setTees(ts => ts.map(t => t.id === activeTeeId
-      ? { ...t, holes: t.holes.map((h, i) => i === idx ? { ...h, strokeIndex: val } : h) }
+      ? { ...t, holes: t.holes.map((h, i) => i === idx ? { ...h, [field]: val } : h) }
       : t
     ));
   }
@@ -232,109 +277,146 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
           </div>
         </div>
 
-        {/* Tees */}
+        {/* Tees — pick one to edit; each tee holds both genders' ratings + SI */}
         <div className="bg-white rounded-xl shadow-card p-4 space-y-4">
           <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Tees</h2>
-          {tees.map((tee, i) => (
-            <div key={tee.id} className="border border-hairline rounded-xl p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Tee {i + 1}</span>
+
+          {/* Tee selector chips (by colour / name) */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {tees.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTeeId(t.id)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  t.id === activeTeeId ? 'bg-canvas-night text-white' : 'bg-gray-100 text-gray-500 active:bg-gray-200'
+                }`}
+              >
+                <span
+                  className="w-3 h-3 rounded-full border border-white/40 flex-shrink-0"
+                  style={{ background: t.color2
+                    ? `linear-gradient(135deg, ${teeColorHex(t.color)} 0 50%, ${teeColorHex(t.color2)} 50% 100%)`
+                    : teeColorHex(t.color) }}
+                />
+                {teeChipLabel(t)}
+              </button>
+            ))}
+            <button
+              onClick={addTee}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-gray-400 border border-dashed border-hairline active:text-ink flex items-center gap-1"
+            >
+              <Plus size={14} /> Add tee
+            </button>
+          </div>
+
+          {activeTee && (() => {
+            const i = tees.findIndex(t => t.id === activeTee.id);
+            return (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Color *</label>
+                    <input
+                      list={`tee-colors-${activeTee.id}`}
+                      className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink bg-white"
+                      value={activeTee.color}
+                      onChange={e => updateTee(activeTee.id, 'color', e.target.value)}
+                      placeholder="e.g. White"
+                    />
+                    <datalist id={`tee-colors-${activeTee.id}`}>
+                      {TEE_COLORS.map(c => <option key={c} value={c} />)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Combo 2nd color</label>
+                    <input
+                      list={`tee-colors2-${activeTee.id}`}
+                      className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink bg-white"
+                      value={activeTee.color2 ?? ''}
+                      onChange={e => updateTee(activeTee.id, 'color2', e.target.value)}
+                      placeholder="optional"
+                    />
+                    <datalist id={`tee-colors2-${activeTee.id}`}>
+                      {TEE_COLORS.map(c => <option key={c} value={c} />)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Name (optional)</label>
+                    <input
+                      className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink"
+                      value={activeTee.name}
+                      onChange={e => updateTee(activeTee.id, 'name', e.target.value)}
+                      placeholder="defaults to color"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Par</label>
+                    <input
+                      type="number" inputMode="numeric"
+                      className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-hairline'}`}
+                      value={activeTee.par}
+                      onChange={e => { updateTee(activeTee.id, 'par', e.target.value); setErrors(x => ({ ...x, [`tee_par_${i}`]: '' })); }}
+                    />
+                    {errors[`tee_par_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_par_${i}`]}</p>}
+                  </div>
+                </div>
+
+                {/* Gender toggle — drives rating/slope + stroke index below */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ratings &amp; SI for</span>
+                  <div className="flex bg-gray-100 rounded-full p-0.5">
+                    {[['mens', "Men's"], ['womens', "Women's"]].map(([val, label]) => (
+                      <button
+                        key={val}
+                        onClick={() => setEditGender(val)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                          editGender === val ? 'bg-golf-green text-white' : 'text-gray-500'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Rating + slope for the selected gender */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Course Rating</label>
+                    <input
+                      type="number" step="0.1" inputMode="decimal"
+                      className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_${editGender}Rating_${i}`] ? 'border-red-400' : 'border-hairline'}`}
+                      value={activeTee[`${editGender}Rating`] ?? ''}
+                      onChange={e => { updateTee(activeTee.id, `${editGender}Rating`, e.target.value); setErrors(x => ({ ...x, [`tee_${editGender}Rating_${i}`]: '', [`tee_ratingreq_${i}`]: '' })); }}
+                      placeholder="72.1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Slope (55–155)</label>
+                    <input
+                      type="number" inputMode="numeric"
+                      className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_${editGender}Slope_${i}`] ? 'border-red-400' : 'border-hairline'}`}
+                      value={activeTee[`${editGender}Slope`] ?? ''}
+                      onChange={e => { updateTee(activeTee.id, `${editGender}Slope`, e.target.value); setErrors(x => ({ ...x, [`tee_${editGender}Slope_${i}`]: '' })); }}
+                      placeholder="113"
+                    />
+                  </div>
+                </div>
+                {(errors[`tee_${editGender}Rating_${i}`] || errors[`tee_${editGender}Slope_${i}`]) && (
+                  <p className="text-red-500 text-xs">{errors[`tee_${editGender}Rating_${i}`] || errors[`tee_${editGender}Slope_${i}`]}</p>
+                )}
+                {errors[`tee_ratingreq_${i}`] && <p className="text-red-500 text-xs">{errors[`tee_ratingreq_${i}`]}</p>}
+
                 {tees.length > 1 && (
-                  <button onClick={() => removeTee(tee.id)} className="text-gray-300 active:text-red-400">
-                    <Trash2 size={16} />
+                  <button
+                    onClick={() => removeTee(activeTee.id)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-gray-400 active:text-red-500 pt-1"
+                  >
+                    <Trash2 size={14} /> Remove {teeChipLabel(activeTee)} tee
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Name</label>
-                  <input
-                    className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink"
-                    value={tee.name}
-                    onChange={e => updateTee(tee.id, 'name', e.target.value)}
-                    placeholder="e.g. Blue (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Par</label>
-                  <input
-                    type="number" inputMode="numeric"
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-hairline'}`}
-                    value={tee.par}
-                    onChange={e => { updateTee(tee.id, 'par', e.target.value); setErrors(x => ({ ...x, [`tee_par_${i}`]: '' })); }}
-                  />
-                  {errors[`tee_par_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_par_${i}`]}</p>}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Color *</label>
-                  <input
-                    list={`tee-colors-${tee.id}`}
-                    className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink bg-white"
-                    value={tee.color}
-                    onChange={e => updateTee(tee.id, 'color', e.target.value)}
-                    placeholder="e.g. White"
-                  />
-                  <datalist id={`tee-colors-${tee.id}`}>
-                    {TEE_COLORS.map(c => <option key={c} value={c} />)}
-                  </datalist>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Combo 2nd color</label>
-                  <input
-                    list={`tee-colors2-${tee.id}`}
-                    className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink bg-white"
-                    value={tee.color2 ?? ''}
-                    onChange={e => updateTee(tee.id, 'color2', e.target.value)}
-                    placeholder="e.g. White (optional)"
-                  />
-                  <datalist id={`tee-colors2-${tee.id}`}>
-                    {TEE_COLORS.map(c => <option key={c} value={c} />)}
-                  </datalist>
-                </div>
-              </div>
-
-              {/* Course rating + slope, separately for men's and women's tees. At
-                  least one set is required; leave the other blank if unknown. */}
-              <div className="space-y-2">
-                {[{ key: 'mens', label: "Men's" }, { key: 'womens', label: "Women's" }].map(({ key, label }) => (
-                  <div key={key} className="flex items-end gap-2">
-                    <span className="text-xs font-semibold text-gray-500 w-14 pb-2 flex-shrink-0">{label}</span>
-                    <div className="flex-1">
-                      <label className="text-xs text-gray-400 mb-1 block">Rating</label>
-                      <input
-                        type="number" step="0.1" inputMode="decimal"
-                        className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_${key}Rating_${i}`] ? 'border-red-400' : 'border-hairline'}`}
-                        value={tee[`${key}Rating`] ?? ''}
-                        onChange={e => { updateTee(tee.id, `${key}Rating`, e.target.value); setErrors(x => ({ ...x, [`tee_${key}Rating_${i}`]: '', [`tee_ratingreq_${i}`]: '' })); }}
-                        placeholder="72.1"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs text-gray-400 mb-1 block">Slope</label>
-                      <input
-                        type="number" inputMode="numeric"
-                        className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_${key}Slope_${i}`] ? 'border-red-400' : 'border-hairline'}`}
-                        value={tee[`${key}Slope`] ?? ''}
-                        onChange={e => { updateTee(tee.id, `${key}Slope`, e.target.value); setErrors(x => ({ ...x, [`tee_${key}Slope_${i}`]: '' })); }}
-                        placeholder="113"
-                      />
-                    </div>
-                  </div>
-                ))}
-                {['mens', 'womens'].map(key => {
-                  const msg = errors[`tee_${key}Rating_${i}`] || errors[`tee_${key}Slope_${i}`];
-                  return msg ? <p key={key} className="text-red-500 text-xs">{key === 'mens' ? "Men's" : "Women's"}: {msg}</p> : null;
-                })}
-                {errors[`tee_ratingreq_${i}`] && <p className="text-red-500 text-xs">{errors[`tee_ratingreq_${i}`]}</p>}
-              </div>
-            </div>
-          ))}
-          <button
-            onClick={addTee}
-            className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-hairline rounded-xl text-gray-400 text-sm font-medium active:border-ink active:text-ink transition-colors"
-          >
-            <Plus size={16} /> Add Tee
-          </button>
+            );
+          })()}
         </div>
 
         {/* Hole Details — per tee */}
@@ -351,24 +433,26 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
 
           {showHoles && (
             <div className="pb-5">
-              {/* Tee selector — only shown when multiple tees */}
-              {tees.length > 1 && (
-                <div className="px-4 mb-4 flex gap-2 overflow-x-auto pb-1">
-                  {tees.map((t, i) => (
+              {/* Active tee + which gender's stroke index is being edited.
+                  Par is shared across genders; stroke index is per gender. */}
+              <div className="px-4 mb-4 flex items-center justify-between gap-2">
+                <p className="text-xs text-gray-500 min-w-0 truncate">
+                  <span className="font-semibold text-gray-700">{teeChipLabel(activeTee)}</span> · stroke index
+                </p>
+                <div className="flex bg-gray-100 rounded-full p-0.5 flex-shrink-0">
+                  {[['mens', "Men's"], ['womens', "Women's"]].map(([val, label]) => (
                     <button
-                      key={t.id}
-                      onClick={() => setActiveTeeId(t.id)}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                        t.id === activeTeeId
-                          ? 'bg-canvas-night text-white'
-                          : 'bg-gray-100 text-gray-500 active:bg-gray-200'
+                      key={val}
+                      onClick={() => setEditGender(val)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                        editGender === val ? 'bg-golf-green text-white' : 'text-gray-500'
                       }`}
                     >
-                      {t.name || `Tee ${i + 1}`}
+                      {label}
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
 
               <div className="px-4 space-y-6">
                 {[{ label: 'Front 9', start: 0 }, { label: 'Back 9', start: 9 }].map(({ label, start }) => (
@@ -377,6 +461,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                     <div className="space-y-2">
                       {(activeTee?.holes ?? emptyHoles()).slice(start, start + 9).map((h, rel) => {
                         const idx = start + rel;
+                        const si = h[`${editGender}StrokeIndex`] ?? null;
                         return (
                           <div key={h.number} className="flex items-center gap-3">
                             <div className="w-7 text-center flex-shrink-0">
@@ -400,14 +485,14 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <button
                                 type="button"
-                                onClick={() => updateHoleSI(idx, h.strokeIndex === null || h.strokeIndex <= 1 ? null : h.strokeIndex - 1)}
+                                onClick={() => updateHoleSI(idx, si === null || si <= 1 ? null : si - 1)}
                                 className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
                               >−</button>
                               <input
                                 type="number"
                                 inputMode="numeric"
                                 min="1" max="18"
-                                value={h.strokeIndex ?? ''}
+                                value={si ?? ''}
                                 onChange={e => {
                                   if (e.target.value === '') { updateHoleSI(idx, null); return; }
                                   const n = parseInt(e.target.value);
@@ -418,7 +503,7 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                               />
                               <button
                                 type="button"
-                                onClick={() => updateHoleSI(idx, Math.min((h.strokeIndex ?? 0) + 1, 18))}
+                                onClick={() => updateHoleSI(idx, Math.min((si ?? 0) + 1, 18))}
                                 className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 text-lg font-bold active:bg-gray-200"
                               >+</button>
                             </div>
@@ -428,11 +513,11 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                     </div>
                   </div>
                 ))}
-                <p className="text-xs text-gray-400">Par: tap left ← to lower, right → to raise · SI: tap or type</p>
+                <p className="text-xs text-gray-400">Par is shared; stroke index is per gender. Par: tap left ← to lower, right → to raise · SI: tap or type</p>
               </div>
 
-              {errors[`tee_holes_si_${activeTeeIndex}`] && (
-                <p className="text-red-500 text-xs px-4 pt-2">{errors[`tee_holes_si_${activeTeeIndex}`]}</p>
+              {errors[`tee_${editGender}_si_${activeTeeIndex}`] && (
+                <p className="text-red-500 text-xs px-4 pt-2">{errors[`tee_${editGender}_si_${activeTeeIndex}`]}</p>
               )}
             </div>
           )}

@@ -10,6 +10,7 @@ import {
   calcScoreDifferential,
   calcAdjustedGrossScore,
   teeRatingSlope,
+  teeHoles,
 } from '../utils/handicap';
 import { computeRoundStats } from '../utils/roundStats';
 import { useAuth } from '../context/AuthContext';
@@ -48,66 +49,75 @@ function teeLabel(tee) {
 }
 
 // Inline "add tee" used during round setup so the user doesn't have to leave the
-// flow to add a missing tee. Hole par/stroke-index are course-level, so we copy
-// them from an existing tee (or course holes) and only ask for the tee-specific
-// fields: colour(s), name, men's/women's rating + slope, and par.
-function AddTeeModal({ course, onCancel, onSave }) {
+// flow to add a missing tee. Scoped to the gender being logged (men's/women's),
+// so it captures that gender's rating, slope and stroke index. Hole par/SI are
+// copied from an existing tee.
+function AddTeeModal({ course, gender, onCancel, onSave }) {
+  const genderLabel = gender === 'womens' ? "Women's" : "Men's";
   const sourceTee = course.tees?.find(t => t.holes?.length === 18)
     || (course.holes?.length === 18
         ? { name: '', color: null, holes: course.holes, par: course.holes.reduce((s, h) => s + (h.par ?? 0), 0) }
         : null);
 
-  const [color, setColor]     = useState('White');
-  const [color2, setColor2]   = useState('');   // combo second colour (optional)
-  const [name, setName]       = useState('');
-  const [mensRating, setMensRating]     = useState('');
-  const [mensSlope, setMensSlope]       = useState('');
-  const [womensRating, setWomensRating] = useState('');
-  const [womensSlope, setWomensSlope]   = useState('');
-  const [par, setPar]         = useState(String(sourceTee?.par ?? 72));
-  const [error, setError]     = useState('');
+  const [color, setColor]   = useState('White');
+  const [color2, setColor2] = useState('');   // combo second colour (optional)
+  const [name, setName]     = useState('');
+  const [rating, setRating] = useState('');
+  const [slope, setSlope]   = useState('');
+  const [par, setPar]       = useState(String(sourceTee?.par ?? 72));
+  const [error, setError]   = useState('');
 
-  function pair(rating, slope, label) {
-    const rFilled = rating !== '', sFilled = slope !== '';
-    if (!rFilled && !sFilled) return { ok: true, present: false };
-    const r = parseFloat(rating), s = parseInt(slope, 10);
-    if (isNaN(r)) return { err: `${label} rating is invalid.` };
-    if (isNaN(s) || s < 55 || s > 155) return { err: `${label} slope must be 55–155.` };
-    return { ok: true, present: true, rating: r, slope: s };
-  }
+  // A tee already exists for this exact colour (and combo). Its shared fields
+  // (name + par) belong to it and are locked; we're only adding this gender's
+  // rating/slope/SI. Changing the combo colour makes a different tee, which
+  // unlocks everything again.
+  const c2 = color2.trim() || null;
+  const matched = (course.tees || []).find(t =>
+    (t.color || '').toLowerCase() === color.toLowerCase() && (t.color2 || null) === c2
+  ) || null;
+  const matchedRS = matched ? teeRatingSlope(matched, gender) : { rating: null, slope: null };
+  const lockShared = !!matched;            // name + par come from the existing tee
+  const lockRating = matchedRS.rating != null;  // this gender is already set on it
 
   function handleSave() {
-    const mens = pair(mensRating, mensSlope, "Men's");
-    if (mens.err) return setError(mens.err);
-    const womens = pair(womensRating, womensSlope, "Women's");
-    if (womens.err) return setError(womens.err);
-    if (!mens.present && !womens.present) return setError("Enter a men's and/or women's rating + slope.");
-    const p = parseInt(par, 10);
+    const p = lockShared ? Number(matched.par) : parseInt(par, 10);
+    const r = lockRating ? matchedRS.rating : parseFloat(rating);
+    const s = lockRating ? matchedRS.slope  : parseInt(slope, 10);
+    if (!lockRating) {
+      if (rating === '' || isNaN(r))                     return setError(`${genderLabel} course rating is required.`);
+      if (slope === '' || isNaN(s) || s < 55 || s > 155) return setError(`${genderLabel} slope must be 55–155.`);
+    }
     if (isNaN(p)) return setError('Par is required.');
 
     const baseHoles = sourceTee?.holes
-      ?? Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: null }));
-    const holes = baseHoles.map(h => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex ?? null }));
-    const c2 = color2.trim() || null;
+      ?? Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4 }));
+    // Seed only this gender's stroke index from the source tee; the other gender
+    // is left blank and can be filled in Courses.
+    const holes = baseHoles.map(h => ({
+      number: h.number,
+      par: h.par,
+      mensStrokeIndex:   gender === 'mens'   ? (h.mensStrokeIndex   ?? h.strokeIndex ?? null) : null,
+      womensStrokeIndex: gender === 'womens' ? (h.womensStrokeIndex ?? h.strokeIndex ?? null) : null,
+    }));
     onSave({
       id: uuid(),
-      name: name.trim() || (c2 ? `${color}/${c2}` : color),
+      name: lockShared ? matched.name : (name.trim() || (c2 ? `${color}/${c2}` : color)),
       color,
       color2: c2,
-      mensRating:   mens.present   ? mens.rating   : null,
-      mensSlope:    mens.present   ? mens.slope    : null,
-      womensRating: womens.present ? womens.rating : null,
-      womensSlope:  womens.present ? womens.slope  : null,
-      // Legacy single fields for older consumers (prefer men's).
-      rating: mens.present ? mens.rating : womens.rating ?? null,
-      slope:  mens.present ? mens.slope  : womens.slope ?? null,
+      mensRating:   gender === 'mens'   ? r : null,
+      mensSlope:    gender === 'mens'   ? s : null,
+      womensRating: gender === 'womens' ? r : null,
+      womensSlope:  gender === 'womens' ? s : null,
+      // Legacy single fields for older consumers.
+      rating: r,
+      slope: s,
       par: p,
       holes,
-    });
+    }, gender);
   }
 
   const labelCls = 'text-xs font-semibold text-gray-400 uppercase tracking-wider';
-  const inputCls = 'w-full mt-1 bg-white border border-hairline rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-ink';
+  const inputCls = 'w-full mt-1 bg-white border border-hairline rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-ink disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40" onClick={onCancel}>
@@ -116,9 +126,13 @@ function AddTeeModal({ course, onCancel, onSave }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Add Tee</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900">Add Tee</h2>
+            <span className="px-2 py-0.5 rounded-full bg-golf-light text-golf-green text-xs font-bold">{genderLabel}</span>
+          </div>
           <button onClick={onCancel} className="text-gray-400 text-sm font-medium">Cancel</button>
         </div>
+        <p className="text-xs text-gray-400 -mt-2">Adding the <span className="font-semibold text-gray-600">{genderLabel}</span> rating, slope &amp; stroke index for this tee.</p>
 
         <div>
           <label className={labelCls}>Color</label>
@@ -162,53 +176,85 @@ function AddTeeModal({ course, onCancel, onSave }) {
 
         <div>
           <label className={labelCls}>Name <span className="text-gray-300 normal-case">(optional)</span></label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={color2 ? `${color}/${color2}` : color} className={inputCls} />
+          <input
+            type="text"
+            value={lockShared ? (matched.name || '') : name}
+            onChange={e => setName(e.target.value)}
+            disabled={lockShared}
+            placeholder={color2 ? `${color}/${color2}` : color}
+            className={inputCls}
+          />
         </div>
 
-        {[
-          { label: "Men's", rating: mensRating, setRating: setMensRating, slope: mensSlope, setSlope: setMensSlope },
-          { label: "Women's", rating: womensRating, setRating: setWomensRating, slope: womensSlope, setSlope: setWomensSlope },
-        ].map(row => (
-          <div key={row.label} className="grid grid-cols-[3.5rem_1fr_1fr] items-end gap-2">
-            <span className="text-xs font-semibold text-gray-500 pb-3">{row.label}</span>
-            <div>
-              <label className={labelCls}>Rating</label>
-              <input type="number" inputMode="decimal" step="0.1" value={row.rating} onChange={e => row.setRating(e.target.value)} placeholder="72.1" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Slope</label>
-              <input type="number" inputMode="numeric" value={row.slope} onChange={e => row.setSlope(e.target.value)} placeholder="113" className={inputCls} />
-            </div>
+        <div>
+          <label className={labelCls}>{genderLabel} course rating &amp; slope</label>
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              type="number" inputMode="decimal" step="0.1"
+              value={lockRating ? matchedRS.rating : rating}
+              onChange={e => setRating(e.target.value)}
+              disabled={lockRating}
+              placeholder="Rating 72.1"
+              className={inputCls}
+            />
+            <input
+              type="number" inputMode="numeric"
+              value={lockRating ? matchedRS.slope : slope}
+              onChange={e => setSlope(e.target.value)}
+              disabled={lockRating}
+              placeholder="Slope 113"
+              className={inputCls}
+            />
           </div>
-        ))}
+        </div>
 
         <div>
           <label className={labelCls}>Par</label>
-          <input type="number" inputMode="numeric" value={par} onChange={e => setPar(e.target.value)} className={inputCls} />
+          <input
+            type="number" inputMode="numeric"
+            value={lockShared ? matched.par : par}
+            onChange={e => setPar(e.target.value)}
+            disabled={lockShared}
+            className={inputCls}
+          />
         </div>
 
-        {sourceTee
-          ? <p className="text-xs text-gray-400">Hole pars & stroke indexes are copied from {sourceTee.name || sourceTee.color || 'an existing tee'}. Adjust them in Courses if they differ.</p>
-          : <p className="text-xs text-amber-600">No existing hole data — stroke indexes will be blank. Set them later in Courses.</p>}
+        {matched
+          ? (lockRating
+              ? <p className="text-xs text-amber-600">{teeLabel(matched)} already has {genderLabel} data — pick a different colour, or add a combo to create a new tee.</p>
+              : <p className="text-xs text-gray-500">{teeLabel(matched)} already exists — its name & par are locked. You're adding its {genderLabel} rating, slope &amp; stroke index.</p>)
+          : (sourceTee
+              ? <p className="text-xs text-gray-400">Hole pars & {genderLabel} stroke indexes are copied from {sourceTee.name || sourceTee.color || 'an existing tee'}. Adjust them in Courses if they differ.</p>
+              : <p className="text-xs text-amber-600">No existing hole data — stroke indexes will be blank. Set them later in Courses.</p>)}
 
         {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
 
-        <button onClick={handleSave} className="w-full bg-golf-green text-white font-semibold py-3.5 rounded-full active:opacity-90 transition-opacity">
-          Add Tee
+        <button
+          onClick={handleSave}
+          disabled={lockRating}
+          className={`w-full font-semibold py-3.5 rounded-full transition-opacity ${
+            lockRating ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-golf-green text-white active:opacity-90'
+          }`}
+        >
+          Add {genderLabel} Tee
         </button>
       </div>
     </div>
   );
 }
 
-function buildHoleScores(course, tee, nineHoleType) {
+function buildHoleScores(course, tee, gender, nineHoleType) {
   let holes;
-  const holeData = tee?.holes?.length === 18 ? tee.holes : course.holes;
+  // Stroke index differs by gender, so resolve the tee's holes for this gender;
+  // fall back to course-level holes (legacy single SI) when the tee has none.
+  const holeData = tee?.holes?.length === 18
+    ? teeHoles(tee, gender)
+    : (course.holes?.length === 18 ? course.holes : null);
   if (holeData?.length === 18) {
     holes = holeData.map(h => ({
       number:      h.number,
       par:         h.par,
-      strokeIndex: h.strokeIndex,
+      strokeIndex: h.strokeIndex ?? null,
       score:       h.par,
       putts:       2,
       fairway:     h.par === 3 ? 'na' : null,
@@ -262,15 +308,49 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
   // setting and can be overridden per round at tee selection.
   const [roundGender, setRoundGender]   = useState('mens');
   useEffect(() => { if (user?.gender) setRoundGender(user.gender); }, [user?.gender]);
+  // Switching gender can make the picked tee unavailable (no rating for it).
+  useEffect(() => {
+    if (selectedTee && teeRatingSlope(selectedTee, roundGender).rating == null) setSelectedTee(null);
+  }, [roundGender, selectedTee]);
 
   // Course rating + slope for the selected tee under the chosen gender.
   const teeRS = teeRatingSlope(selectedTee, roundGender);
 
-  function handleAddTee(newTee) {
-    const updated = { ...selectedCourse, tees: [...(selectedCourse.tees ?? []), newTee] };
+  function handleAddTee(newTee, gender) {
+    const tees = selectedCourse.tees ?? [];
+    // If a same-colour (and same-combo) tee already exists, fill this gender's
+    // data into it rather than creating a duplicate-colour entry.
+    const matchIdx = tees.findIndex(t =>
+      (t.color || '').toLowerCase() === (newTee.color || '').toLowerCase()
+      && (t.color2 || null) === (newTee.color2 || null)
+    );
+    const rk = gender === 'womens' ? 'womensRating' : 'mensRating';
+    const sk = gender === 'womens' ? 'womensSlope'  : 'mensSlope';
+    const sik = gender === 'womens' ? 'womensStrokeIndex' : 'mensStrokeIndex';
+
+    let chosen, nextTees;
+    if (matchIdx >= 0) {
+      const ex = tees[matchIdx];
+      chosen = {
+        ...ex,
+        [rk]: newTee[rk],
+        [sk]: newTee[sk],
+        par: ex.par ?? newTee.par,
+        holes: (ex.holes ?? newTee.holes).map((h, i) => ({
+          ...h,
+          [sik]: newTee.holes?.[i]?.[sik] ?? h[sik] ?? null,
+        })),
+      };
+      nextTees = tees.map((t, i) => (i === matchIdx ? chosen : t));
+    } else {
+      chosen = newTee;
+      nextTees = [...tees, newTee];
+    }
+
+    const updated = { ...selectedCourse, tees: nextTees };
     updateCourse(updated);
     setSelectedCourse(updated);
-    setSelectedTee(newTee);
+    setSelectedTee(chosen);
     setShowAddTee(false);
   }
 
@@ -324,7 +404,7 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
   }
 
   function handleStart() {
-    setHoleScores(buildHoleScores(selectedCourse, selectedTee, nineHoleType));
+    setHoleScores(buildHoleScores(selectedCourse, selectedTee, roundGender, nineHoleType));
     setCurrentHole(0);
     setPhase('scoring');
   }
@@ -517,39 +597,51 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
                 </div>
               </div>
               <div className="space-y-2">
-                {selectedCourse.tees.map(tee => {
-                  const rs = teeRatingSlope(tee, roundGender);
+                {(() => {
+                  const genderLabel = roundGender === 'womens' ? "Women's" : "Men's";
+                  const availableTees = selectedCourse.tees.filter(t => teeRatingSlope(t, roundGender).rating != null);
                   return (
-                  <button
-                    key={tee.id}
-                    onClick={() => setSelectedTee(tee)}
-                    className={`w-full text-left bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 transition-all ${
-                      selectedTee?.id === tee.id ? 'ring-2 ring-ink' : ''
-                    }`}
-                  >
-                    <TeeSwatch color={tee.color} color2={tee.color2} className="w-4 h-4" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900 text-sm">{teeLabel(tee)}</p>
-                      <p className="text-gray-400 text-xs">
-                        {rs.rating != null ? `Rating ${rs.rating} · Slope ${rs.slope}` : 'No rating for this tee'} · Par {tee.par}
-                      </p>
-                    </div>
-                    {selectedTee?.id === tee.id && (
-                      <div className="w-5 h-5 bg-golf-green rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                    )}
-                  </button>
+                    <>
+                      {availableTees.length === 0 && (
+                        <div className="bg-white rounded-xl shadow-card px-4 py-5 text-center">
+                          <p className="text-gray-500 text-sm">No {genderLabel} tees for this course yet.</p>
+                          <p className="text-gray-400 text-xs mt-0.5">Add one below to log this round.</p>
+                        </div>
+                      )}
+                      {availableTees.map(tee => {
+                        const rs = teeRatingSlope(tee, roundGender);
+                        return (
+                          <button
+                            key={tee.id}
+                            onClick={() => setSelectedTee(tee)}
+                            className={`w-full text-left bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 transition-all ${
+                              selectedTee?.id === tee.id ? 'ring-2 ring-ink' : ''
+                            }`}
+                          >
+                            <TeeSwatch color={tee.color} color2={tee.color2} className="w-4 h-4" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 text-sm">{teeLabel(tee)}</p>
+                              <p className="text-gray-400 text-xs">Rating {rs.rating} · Slope {rs.slope} · Par {tee.par}</p>
+                            </div>
+                            {selectedTee?.id === tee.id && (
+                              <div className="w-5 h-5 bg-golf-green rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setShowAddTee(true)}
+                        className="w-full border-2 border-dashed border-gray-200 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-gray-500 text-sm font-medium active:bg-gray-50 transition-colors"
+                      >
+                        <Plus size={16} /> Add {genderLabel} tee
+                      </button>
+                    </>
                   );
-                })}
-                <button
-                  onClick={() => setShowAddTee(true)}
-                  className="w-full border-2 border-dashed border-gray-200 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-gray-500 text-sm font-medium active:bg-gray-50 transition-colors"
-                >
-                  <Plus size={16} /> Add tee
-                </button>
+                })()}
               </div>
             </div>
           )}
@@ -587,6 +679,7 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
         {showAddTee && selectedCourse && (
           <AddTeeModal
             course={selectedCourse}
+            gender={roundGender}
             onCancel={() => setShowAddTee(false)}
             onSave={handleAddTee}
           />

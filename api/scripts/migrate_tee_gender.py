@@ -1,9 +1,10 @@
-"""One-time migration: classify existing tee rating/slope as women's.
+"""One-time migration: classify existing tee rating/slope + stroke index as women's.
 
 The existing course data was entered for women's tees, so each tee's legacy
-single ``rating``/``slope`` is copied into ``womensRating``/``womensSlope``
-(only when those gendered fields are not already set). The legacy fields are
-left in place for backward compatibility. Idempotent — safe to re-run.
+single ``rating``/``slope`` is copied into ``womensRating``/``womensSlope`` and
+each hole's legacy ``strokeIndex`` into ``womensStrokeIndex`` (only when those
+gendered fields are not already set). The legacy fields are left in place for
+backward compatibility. Idempotent — safe to re-run.
 
 Run from the repo root:
 
@@ -48,6 +49,14 @@ def main() -> int:
                 tee.setdefault("womensRating", None)
                 tee.setdefault("womensSlope", None)
                 tee.setdefault("color2", tee.get("color2"))
+                # Per-hole stroke index: legacy strokeIndex was women's data.
+                for hole in (tee.get("holes") or []):
+                    si = hole.get("strokeIndex")
+                    if _blank(hole.get("womensStrokeIndex")) and not _blank(si):
+                        hole["womensStrokeIndex"] = si
+                        touched = True
+                    hole.setdefault("mensStrokeIndex", None)
+                    hole.setdefault("womensStrokeIndex", None)
                 if touched:
                     changed_tees += 1
                     course_touched = True

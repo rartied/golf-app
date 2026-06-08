@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { calcCourseHandicap, getHoleStrokes, teeRatingSlope } from '../utils/handicap';
+import { calcCourseHandicap, getHoleStrokes, teeRatingSlope, teeHoles } from '../utils/handicap';
 import { useAuth } from '../context/AuthContext';
 
 function teeColorHex(color) {
@@ -138,10 +138,16 @@ export default function StrokeCard({ courses, handicapIndex }) {
     : null;
 
   const targetGross = courseHandicap !== null ? selectedTee.par + courseHandicap : null;
-  const hasHoleDetails = selectedCourse?.holes?.length === 18;
+
+  // Stroke index is gender-specific; use the selected tee's holes for the
+  // player's gender, falling back to course-level holes.
+  const holeList = selectedTee?.holes?.length === 18
+    ? teeHoles(selectedTee, user?.gender)
+    : (selectedCourse?.holes?.length === 18 ? selectedCourse.holes : []);
+  const hasHoleDetails = holeList.length === 18;
 
   const holes = hasHoleDetails
-    ? selectedCourse.holes.map(h => {
+    ? holeList.map(h => {
         const strokes = getHoleStrokes(courseHandicap, h.strokeIndex);
         return { ...h, strokes, netPar: h.par + strokes };
       })

@@ -149,7 +149,7 @@ export default function Stats({ rounds }) {
   const withStats   = enriched.filter(r => r.stats.hasData);
   const withChips   = enriched.filter(r => r.stats.upAndDownAttempts > 0);
   const withGIR     = enriched.filter(r => r.stats.girCount > 0);
-  const withBalls   = enriched.filter(r => r.holeScores?.[0]?.ballsLost != null);
+  const withBalls   = enriched;
 
   function avg(arr, fn) {
     if (!arr.length) return null;
@@ -290,11 +290,13 @@ export default function Stats({ rounds }) {
       avg: avgFWBnkr,
       fmt: v => v.toFixed(1),
     },
-    withStats.length > 0 && {
-      label: 'Penalties / Rnd',
-      value: avgPenalties != null ? avgPenalties.toFixed(1) : null,
-      points: withStats.map(r => ({ date: r.date, v: r.stats.penalties })),
-      avg: avgPenalties,
+    withBalls.length > 0 && {
+      label: 'Balls / Round',
+      value: avgBalls != null ? avgBalls.toFixed(1) : null,
+      sub: `${withBalls.length} round${withBalls.length !== 1 ? 's' : ''}`,
+      improving: ballsImproving,
+      points: withBalls.map(r => ({ date: r.date, v: r.stats.ballsLost })),
+      avg: avgBalls,
       fmt: v => v.toFixed(1),
     },
     withChips.length > 0 && {
@@ -306,13 +308,11 @@ export default function Stats({ rounds }) {
       avg: avgUpDown,
       fmt: v => `${v.toFixed(0)}%`,
     },
-    withBalls.length > 0 && {
-      label: 'Balls / Round',
-      value: avgBalls != null ? avgBalls.toFixed(1) : null,
-      sub: withBalls.length < allRounds.length ? `${withBalls.length} rounds` : null,
-      improving: ballsImproving,
-      points: withBalls.map(r => ({ date: r.date, v: r.stats.ballsLost })),
-      avg: avgBalls,
+    withStats.length > 0 && {
+      label: 'Penalties / Rnd',
+      value: avgPenalties != null ? avgPenalties.toFixed(1) : null,
+      points: withStats.map(r => ({ date: r.date, v: r.stats.penalties })),
+      avg: avgPenalties,
       fmt: v => v.toFixed(1),
     },
   ].filter(Boolean);
@@ -353,7 +353,7 @@ export default function Stats({ rounds }) {
               prev: `${pp.fairwaysHit}/${pp.fairwayAttempts}`,
               d: delta(lastRound, prevRound, r => r.stats.fairwaysHit / r.stats.fairwayAttempts, false),
             },
-            lastRound.holeScores?.[0]?.ballsLost != null && prevRound.holeScores?.[0]?.ballsLost != null && {
+            lp.hasData && pp.hasData && {
               label: 'Balls Lost',
               last: lp.ballsLost,
               prev: pp.ballsLost,
@@ -473,24 +473,14 @@ export default function Stats({ rounds }) {
                 />
               )}
               {withBalls.length > 0 && (() => {
-                const best = withBalls.reduce((b, r) => r.stats.ballsLost < b.stats.ballsLost ? r : b);
                 const total = withBalls.reduce((s, r) => s + r.stats.ballsLost, 0);
                 return (
-                  <>
-                    <RecordRow
-                      label="Fewest Balls Lost"
-                      value={`${best.stats.ballsLost} ball${best.stats.ballsLost !== 1 ? 's' : ''}`}
-                      sub={roundSub(best)}
-                      roundId={best.id}
-                      navigate={navigate}
-                    />
-                    <RecordRow
-                      label="Career Balls Lost"
-                      value={`${total} total`}
-                      sub={`${withBalls.length} round${withBalls.length !== 1 ? 's' : ''} tracked`}
-                      navigate={navigate}
-                    />
-                  </>
+                  <RecordRow
+                    label="Career Balls Lost"
+                    value={`${total} total`}
+                    sub={`${withBalls.length} round${withBalls.length !== 1 ? 's' : ''} tracked`}
+                    navigate={navigate}
+                  />
                 );
               })()}
             </div>

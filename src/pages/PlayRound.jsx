@@ -23,8 +23,9 @@ function teeColorHex(color) {
 
 function buildHoleScores(course, tee, nineHoleType) {
   let holes;
-  if (course.holes?.length === 18) {
-    holes = course.holes.map(h => ({
+  const holeData = tee?.holes?.length === 18 ? tee.holes : course.holes;
+  if (holeData?.length === 18) {
+    holes = holeData.map(h => ({
       number:      h.number,
       par:         h.par,
       strokeIndex: h.strokeIndex,
@@ -409,8 +410,9 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
           </div>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-3 py-1.5 space-y-1.5">
+        {/* Cards + nav */}
+        <div className="flex-1 flex flex-col gap-1.5 px-3">
+          <div className="flex-[0.5]" />
 
           {/* Score + Putts */}
           <div className="bg-white rounded-xl shadow-card px-4 py-2">
@@ -514,42 +516,42 @@ export default function PlayRound({ courses, handicapIndex, addRound }) {
             </div>
           </div>
 
-        </div>
-
-        {/* Navigation */}
-        <div className="px-4 pt-1 pb-3 safe-pb flex-shrink-0 bg-canvas-cream">
-          <div className="flex gap-3">
-            {currentHole > 0 ? (
-              <button
-                onClick={() => setCurrentHole(h => h - 1)}
-                className="flex-1 bg-white border border-hairline text-gray-700 font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:bg-gray-50"
-              >
-                <ChevronLeft size={18} /> Prev
-              </button>
-            ) : (
-              <div className="flex-1" />
-            )}
-            {currentHole < holeScores.length - 1 ? (
-              <button
-                onClick={() => setCurrentHole(h => h + 1)}
-                className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:opacity-90"
-              >
-                Next <ChevronRight size={18} />
-              </button>
-            ) : (
-              <button
-                onClick={() => setPhase('summary')}
-                className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-full active:opacity-90"
-              >
-                Finish Round
+          {/* Navigation */}
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-3">
+              {currentHole > 0 ? (
+                <button
+                  onClick={() => setCurrentHole(h => h - 1)}
+                  className="flex-1 bg-white border border-hairline text-gray-700 font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:bg-gray-50"
+                >
+                  <ChevronLeft size={18} /> Prev
+                </button>
+              ) : (
+                <div className="flex-1" />
+              )}
+              {currentHole < holeScores.length - 1 ? (
+                <button
+                  onClick={() => setCurrentHole(h => h + 1)}
+                  className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-1 active:opacity-90"
+                >
+                  Next <ChevronRight size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setPhase('summary')}
+                  className="flex-1 bg-golf-green text-white font-semibold py-3.5 rounded-full active:opacity-90"
+                >
+                  Finish Round
+                </button>
+              )}
+            </div>
+            {currentHole < holeScores.length - 1 && (
+              <button onClick={() => setPhase('summary')} className="w-full text-center text-gray-400 text-sm py-1">
+                Finish early
               </button>
             )}
           </div>
-          {currentHole < holeScores.length - 1 && (
-            <button onClick={() => setPhase('summary')} className="w-full text-center text-gray-400 text-sm py-2">
-              Finish early
-            </button>
-          )}
+          <div className="flex-[0.5]" />
         </div>
       </div>
     );

@@ -320,8 +320,11 @@ function AddTeeModal({ course, gender, onCancel, onSave }) {
   );
 }
 
-function buildHoleScores(course, tee, gender, nineHoleType) {
+function buildHoleScores(course, tee, gender, nineHoleType, trackStats = true) {
   let holes;
+  // Score-only rounds leave stats untracked: putts null so they're excluded
+  // from stat aggregates rather than logged as a fake "2 putts" per hole.
+  const putts0 = trackStats ? 2 : null;
   // Stroke index differs by gender, so resolve the tee's holes for this gender;
   // fall back to course-level holes (legacy single SI) when the tee has none.
   const holeData = tee?.holes?.length === 18
@@ -333,7 +336,7 @@ function buildHoleScores(course, tee, gender, nineHoleType) {
       par:         h.par,
       strokeIndex: h.strokeIndex ?? null,
       score:       h.par,
-      putts:       2,
+      putts:       putts0,
       fairway:     h.par === 3 ? 'na' : null,
       greenHit:    null,
       fairwayBunkers:   0,
@@ -350,7 +353,7 @@ function buildHoleScores(course, tee, gender, nineHoleType) {
       par:         4,
       strokeIndex: i + 1,
       score:       4,
-      putts:       2,
+      putts:       putts0,
       fairway:     null,
       greenHit:    null,
       fairwayBunkers:   0,
@@ -379,6 +382,7 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
   const [date, setDate]                 = useState(() => new Date().toISOString().split('T')[0]);
   const [courseSearch, setCourseSearch] = useState('');
   const [nineHoleType, setNineHoleType] = useState(null);
+  const [trackStats, setTrackStats]     = useState(true);  // false = score-only (no putts/fairway/GIR/penalties)
   const [showAddTee, setShowAddTee]     = useState(false);
   const { user } = useAuth();
   // Which tee rating/slope to use this round; defaults to the player's profile
@@ -455,9 +459,10 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
       holeScores,
       currentHole,
       nineHoleType,
+      trackStats,
       holesPlayed: nineHoleType ? 9 : 18,
     });
-  }, [phase, holeScores, currentHole, selectedCourse, selectedTee, date, roundGender]);
+  }, [phase, holeScores, currentHole, selectedCourse, selectedTee, date, roundGender, trackStats]);
 
   function handleResume() {
     const s = savedRound;
@@ -471,6 +476,7 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
     setHoleScores(s.holeScores);
     setCurrentHole(s.currentHole);
     setNineHoleType(s.nineHoleType ?? null);
+    setTrackStats(s.trackStats ?? true);
     setPhase('scoring');
   }
 
@@ -481,7 +487,7 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
   }
 
   function handleStart() {
-    setHoleScores(buildHoleScores(selectedCourse, selectedTee, roundGender, nineHoleType));
+    setHoleScores(buildHoleScores(selectedCourse, selectedTee, roundGender, nineHoleType, trackStats));
     setCurrentHole(0);
     setPhase('scoring');
   }
@@ -747,6 +753,33 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
           )}
 
           {selectedCourse && selectedTee && (
+            <div>
+              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Tracking</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Full round', value: true },
+                  { label: 'Score only', value: false },
+                ].map(({ label, value }) => (
+                  <button
+                    key={label}
+                    onClick={() => setTrackStats(value)}
+                    className={`py-3 rounded-full text-sm font-semibold transition-colors ${
+                      trackStats === value ? 'bg-golf-green text-white' : 'bg-white text-gray-600 shadow-card'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1.5 px-1">
+                {trackStats
+                  ? 'Track putts, fairways, GIR, bunkers, chips and penalties.'
+                  : 'Just enter the score for each hole — counts for your handicap.'}
+              </p>
+            </div>
+          )}
+
+          {selectedCourse && selectedTee && (
             <button onClick={handleStart} className="w-full bg-golf-green text-white font-semibold py-4 rounded-full active:opacity-90 transition-opacity">
               Log Round
             </button>
@@ -853,72 +886,80 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
                 <p className={`text-xs font-semibold mt-1 ${rel.color}`}>{rel.label}</p>
               </div>
 
-              <div className="w-px bg-gray-100" />
+              {trackStats && (
+                <>
+                  <div className="w-px bg-gray-100" />
 
-              {/* Putts */}
-              <div className="flex-1 flex flex-col items-center">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Putts</p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateHoleStat(currentHole, 'putts', Math.max(0, (hole.putts ?? 0) - 1))}
-                    className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
-                  >−</button>
-                  <div className="text-center w-12">
-                    <p className="text-5xl font-black text-gray-900 tabular-nums leading-none">{hole.putts ?? 0}</p>
+                  {/* Putts */}
+                  <div className="flex-1 flex flex-col items-center">
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Putts</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateHoleStat(currentHole, 'putts', Math.max(0, (hole.putts ?? 0) - 1))}
+                        className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
+                      >−</button>
+                      <div className="text-center w-12">
+                        <p className="text-5xl font-black text-gray-900 tabular-nums leading-none">{hole.putts ?? 0}</p>
+                      </div>
+                      <button
+                        onClick={() => updateHoleStat(currentHole, 'putts', (hole.putts ?? 0) + 1)}
+                        className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
+                      >+</button>
+                    </div>
+                    <p className="text-xs font-semibold mt-1 text-gray-300">putts</p>
                   </div>
-                  <button
-                    onClick={() => updateHoleStat(currentHole, 'putts', (hole.putts ?? 0) + 1)}
-                    className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-light text-gray-600 active:scale-95 select-none"
-                  >+</button>
-                </div>
-                <p className="text-xs font-semibold mt-1 text-gray-300">putts</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Direction pickers */}
-          <div className="bg-white rounded-xl shadow-card px-4 py-2">
-            <div className="flex items-center gap-2">
-              {hole.par !== 3 ? (
-                <DirectionPicker
-                  label="Fairway"
-                  value={hole.fairway}
-                  onChange={v => updateHoleStat(currentHole, 'fairway', v)}
-                  hasLongShort={false}
-                />
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Fairway</p>
-                  <p className="text-xs text-gray-300 italic py-6">Par 3</p>
-                </div>
+                </>
               )}
-              <div className="w-px bg-gray-100 self-stretch mx-1" />
-              <DirectionPicker
-                label="GIR"
-                value={hole.greenHit}
-                onChange={v => updateHoleStat(currentHole, 'greenHit', v)}
-                hasLongShort={true}
-              />
             </div>
           </div>
 
-          {/* Stat Trackers + Penalties */}
-          <div className="bg-white rounded-xl shadow-card px-4 py-3 space-y-3">
-            <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Stat Trackers</p>
-            <div className="grid grid-cols-4 gap-2">
-              <StatTracker topLabel="FW" label="Bunker" value={hole.fairwayBunkers} onChange={v => updateHoleStat(currentHole, 'fairwayBunkers', v)} />
-              <StatTracker topLabel="GS" label="Bunker" value={hole.greensideBunkers} onChange={v => updateHoleStat(currentHole, 'greensideBunkers', v)} />
-              <StatTracker label="Chip" value={hole.chipShots} onChange={v => updateHoleStat(currentHole, 'chipShots', v)} />
-              <StatTracker label="Lost Ball" value={hole.ballsLost ?? 0} onChange={v => updateHoleStat(currentHole, 'ballsLost', v)} />
-            </div>
-            <div className="border-t border-hairline" />
-            <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Penalties</p>
-            <div className="flex gap-2">
-              <PenaltyPill label="Water" value={hole.waterHazards} onChange={v => updateHoleStat(currentHole, 'waterHazards', v)} />
-              <PenaltyPill label="OB" value={hole.outOfBounds} onChange={v => updateHoleStat(currentHole, 'outOfBounds', v)} />
-              <PenaltyPill label="Drop" value={hole.dropShots} onChange={v => updateHoleStat(currentHole, 'dropShots', v)} />
-            </div>
-          </div>
+          {trackStats && (
+            <>
+              {/* Direction pickers */}
+              <div className="bg-white rounded-xl shadow-card px-4 py-2">
+                <div className="flex items-center gap-2">
+                  {hole.par !== 3 ? (
+                    <DirectionPicker
+                      label="Fairway"
+                      value={hole.fairway}
+                      onChange={v => updateHoleStat(currentHole, 'fairway', v)}
+                      hasLongShort={false}
+                    />
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center">
+                      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Fairway</p>
+                      <p className="text-xs text-gray-300 italic py-6">Par 3</p>
+                    </div>
+                  )}
+                  <div className="w-px bg-gray-100 self-stretch mx-1" />
+                  <DirectionPicker
+                    label="GIR"
+                    value={hole.greenHit}
+                    onChange={v => updateHoleStat(currentHole, 'greenHit', v)}
+                    hasLongShort={true}
+                  />
+                </div>
+              </div>
+
+              {/* Stat Trackers + Penalties */}
+              <div className="bg-white rounded-xl shadow-card px-4 py-3 space-y-3">
+                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Stat Trackers</p>
+                <div className="grid grid-cols-4 gap-2">
+                  <StatTracker topLabel="FW" label="Bunker" value={hole.fairwayBunkers} onChange={v => updateHoleStat(currentHole, 'fairwayBunkers', v)} />
+                  <StatTracker topLabel="GS" label="Bunker" value={hole.greensideBunkers} onChange={v => updateHoleStat(currentHole, 'greensideBunkers', v)} />
+                  <StatTracker label="Chip" value={hole.chipShots} onChange={v => updateHoleStat(currentHole, 'chipShots', v)} />
+                  <StatTracker label="Lost Ball" value={hole.ballsLost ?? 0} onChange={v => updateHoleStat(currentHole, 'ballsLost', v)} />
+                </div>
+                <div className="border-t border-hairline" />
+                <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest">Penalties</p>
+                <div className="flex gap-2">
+                  <PenaltyPill label="Water" value={hole.waterHazards} onChange={v => updateHoleStat(currentHole, 'waterHazards', v)} />
+                  <PenaltyPill label="OB" value={hole.outOfBounds} onChange={v => updateHoleStat(currentHole, 'outOfBounds', v)} />
+                  <PenaltyPill label="Drop" value={hole.dropShots} onChange={v => updateHoleStat(currentHole, 'dropShots', v)} />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Navigation */}
           <div className="flex flex-col gap-2">

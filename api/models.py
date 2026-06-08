@@ -27,6 +27,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     display_name: Mapped[str | None] = mapped_column(String)
+    # Default tee gender for handicap math: 'mens' or 'womens'. Overridable per round.
+    gender: Mapped[str] = mapped_column(String, nullable=False, server_default=text("'mens'"))
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")

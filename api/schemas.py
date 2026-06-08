@@ -16,7 +16,13 @@ class UserOut(BaseModel):
     id: uuid.UUID
     email: str
     display_name: str | None = None
+    gender: str = "mens"
     is_admin: bool
+
+
+class UserUpdateIn(BaseModel):
+    display_name: str | None = None
+    gender: str | None = None  # 'mens' | 'womens'
 
 
 class LoginIn(BaseModel):

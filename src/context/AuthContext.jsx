@@ -46,8 +46,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  // Patch the current user's profile (e.g. default tee gender). Optimistic so
+  // toggles feel instant; reconciles with the server's response on success.
+  const updateProfile = useCallback(async (patch) => {
+    setUser(prev => (prev ? { ...prev, ...patch } : prev));
+    const saved = await api.put('/auth/me', patch);
+    setUser(saved);
+    return saved;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

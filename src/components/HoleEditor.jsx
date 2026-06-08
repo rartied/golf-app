@@ -83,27 +83,31 @@ export function StatTracker({ topLabel, label, value, onChange }) {
   const active = value > 0;
   return (
     <div className="flex flex-col items-center gap-1">
-      <button
-        onClick={() => onChange(value + 1)}
-        className={`relative w-full aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
-          active ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-50'
-        }`}
-      >
-        {topLabel && (
-          <span className={`text-[9px] font-bold uppercase leading-none ${active ? 'text-golf-green' : 'text-gray-400'}`}>
-            {topLabel}
+      <div className="relative w-full aspect-square">
+        <button
+          type="button"
+          onClick={() => onChange(value + 1)}
+          className={`w-full h-full rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${
+            active ? 'bg-golf-light ring-2 ring-golf-green' : 'bg-gray-50'
+          }`}
+        >
+          {topLabel && (
+            <span className={`text-[9px] font-bold uppercase leading-none ${active ? 'text-golf-green' : 'text-gray-400'}`}>
+              {topLabel}
+            </span>
+          )}
+          <span className={`text-2xl font-black leading-none tabular-nums ${active ? 'text-golf-green' : 'text-gray-700'}`}>
+            {value}
           </span>
-        )}
-        <span className={`text-2xl font-black leading-none tabular-nums ${active ? 'text-golf-green' : 'text-gray-700'}`}>
-          {value}
-        </span>
+        </button>
         {active && (
           <button
-            onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
-            className="absolute -top-3 -right-3 w-8 h-8 bg-gray-400 text-white text-base font-bold rounded-full flex items-center justify-center"
+            type="button"
+            onClick={e => { e.stopPropagation(); onChange(value - 1); }}
+            className="absolute -top-3 -right-3 w-8 h-8 bg-gray-400 text-white text-base font-bold rounded-full flex items-center justify-center z-10"
           >−</button>
         )}
-      </button>
+      </div>
       <span className={`text-[9px] font-semibold uppercase tracking-wide text-center leading-tight ${active ? 'text-golf-green' : 'text-gray-400'}`}>
         {label}
       </span>
@@ -114,19 +118,23 @@ export function StatTracker({ topLabel, label, value, onChange }) {
 export function PenaltyPill({ label, value, onChange }) {
   const active = value > 0;
   return (
-    <button
-      onClick={() => onChange(value + 1)}
-      className={`relative flex-1 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all active:scale-95 ${
-        active ? 'bg-canvas-night text-white' : 'bg-white border border-hairline text-gray-500'
-      }`}
-    >
-      {label}{active ? ` · ${value}` : ''}
+    <div className="relative flex-1">
+      <button
+        type="button"
+        onClick={() => onChange(value + 1)}
+        className={`w-full py-2.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all active:scale-95 ${
+          active ? 'bg-canvas-night text-white' : 'bg-white border border-hairline text-gray-500'
+        }`}
+      >
+        {label}{active ? ` · ${value}` : ''}
+      </button>
       {active && (
         <button
-          onPointerDown={e => { e.stopPropagation(); onChange(value - 1); }}
-          className="absolute -top-3 -right-3 w-8 h-8 bg-gray-400 text-white text-base font-bold rounded-full flex items-center justify-center"
+          type="button"
+          onClick={e => { e.stopPropagation(); onChange(value - 1); }}
+          className="absolute -top-3 -right-3 w-8 h-8 bg-gray-400 text-white text-base font-bold rounded-full flex items-center justify-center z-10"
         >−</button>
       )}
-    </button>
+    </div>
   );
 }

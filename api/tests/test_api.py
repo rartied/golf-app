@@ -24,6 +24,22 @@ def test_login_success_and_me(client, user):
     assert me.status_code == 200
     assert me.json()["email"] == "player@example.com"
     assert me.json()["is_admin"] is False
+    assert me.json()["gender"] == "mens"  # default
+
+
+def test_update_profile_gender(client, user):
+    h = auth_headers(client, "player@example.com")
+    r = client.put("/api/auth/me", json={"gender": "womens"}, headers=h)
+    assert r.status_code == 200, r.text
+    assert r.json()["gender"] == "womens"
+    # persisted
+    assert client.get("/api/auth/me", headers=h).json()["gender"] == "womens"
+
+
+def test_update_profile_rejects_bad_gender(client, user):
+    h = auth_headers(client, "player@example.com")
+    r = client.put("/api/auth/me", json={"gender": "other"}, headers=h)
+    assert r.status_code == 422
 
 
 def test_login_wrong_password(client, user):

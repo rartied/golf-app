@@ -1,5 +1,25 @@
 // World Handicap System (WHS 2024) calculations
 
+// Resolve a tee's course rating + slope for the given player gender ('mens' |
+// 'womens'). Tees may carry separate men's/women's values; we prefer the
+// requested gender, fall back to the other gender, then to the legacy single
+// rating/slope fields used by tees created before this split. Returns numbers
+// (or null) so callers can feed calcCourseHandicap / calcScoreDifferential.
+export function teeRatingSlope(tee, gender = 'mens') {
+  if (!tee) return { rating: null, slope: null };
+  const order = gender === 'womens'
+    ? [['womensRating', 'womensSlope'], ['mensRating', 'mensSlope']]
+    : [['mensRating', 'mensSlope'], ['womensRating', 'womensSlope']];
+  for (const [rk, sk] of order) {
+    const r = tee[rk], s = tee[sk];
+    if (r != null && r !== '' && s != null && s !== '') return { rating: Number(r), slope: Number(s) };
+  }
+  if (tee.rating != null && tee.rating !== '' && tee.slope != null && tee.slope !== '') {
+    return { rating: Number(tee.rating), slope: Number(tee.slope) };
+  }
+  return { rating: null, slope: null };
+}
+
 // Best differentials to use based on number of scores in record
 const WHS_TABLE = [
   null, null, null,            // 0-2: not enough

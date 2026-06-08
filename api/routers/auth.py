@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from ..auth import create_access_token, get_current_user, hash_password, verify_password
 from ..db import get_db
 from ..models import Invite, User
-from ..schemas import LoginIn, RegisterIn, TokenOut, UserOut
+from ..schemas import LoginIn, RegisterIn, TokenOut, UserOut, UserUpdateIn
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -63,4 +63,24 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)):
+    return UserOut.model_validate(user)
+
+
+@router.put("/me", response_model=UserOut)
+def update_me(
+    body: UserUpdateIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if body.display_name is not None:
+        user.display_name = body.display_name
+    if body.gender is not None:
+        if body.gender not in ("mens", "womens"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="gender must be 'mens' or 'womens'",
+            )
+        user.gender = body.gender
+    db.commit()
+    db.refresh(user)
     return UserOut.model_validate(user)

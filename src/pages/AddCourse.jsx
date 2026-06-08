@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const TEE_COLORS = ['White', 'Yellow', 'Blue', 'Red', 'Gold', 'Black', 'Green', 'Silver', 'Orange', 'Purple'];
+const TEE_COLORS = ['Gold', 'Red', 'Green', 'White', 'Blue', 'Black', 'Yellow', 'Orange', 'Purple', 'Silver'];
 
 function emptyHoles() {
   return Array.from({ length: 18 }, (_, i) => ({
@@ -14,7 +14,11 @@ function emptyHoles() {
 }
 
 function emptyTee() {
-  return { id: uuid(), name: '', color: 'White', rating: '', slope: '', par: 72, holes: emptyHoles() };
+  return {
+    id: uuid(), name: '', color: 'White', color2: '',
+    mensRating: '', mensSlope: '', womensRating: '', womensSlope: '',
+    par: 72, holes: emptyHoles(),
+  };
 }
 
 export default function AddCourse({ courses, addCourse, updateCourse }) {
@@ -27,7 +31,17 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   const [tees, setTees] = useState(() => {
     if (!existing?.tees?.length) return [emptyTee()];
     return existing.tees.map(t => ({
-      ...t,
+      id: t.id,
+      name: t.name ?? '',
+      color: t.color ?? 'White',
+      color2: t.color2 ?? '',
+      // Existing course data was entered for women's tees, so legacy single
+      // rating/slope map onto the women's fields.
+      mensRating:   t.mensRating   ?? '',
+      mensSlope:    t.mensSlope    ?? '',
+      womensRating: t.womensRating ?? t.rating ?? '',
+      womensSlope:  t.womensSlope  ?? t.slope  ?? '',
+      par: t.par ?? 72,
       // Use tee-specific holes if present, otherwise fall back to course-level holes
       holes: t.holes?.length === 18 ? t.holes : (existing.holes?.length === 18 ? [...existing.holes] : emptyHoles()),
     }));
@@ -45,8 +59,20 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
     if (!name.trim()) e.name = 'Course name is required';
 
     tees.forEach((t, i) => {
-      if (!t.rating || isNaN(t.rating)) e[`tee_rating_${i}`] = 'Required';
-      if (!t.slope || isNaN(t.slope) || t.slope < 55 || t.slope > 155) e[`tee_slope_${i}`] = '55–155';
+      // Validate each gendered rating/slope pair that has any value entered.
+      let hasAnyPair = false;
+      for (const key of ['mens', 'womens']) {
+        const r = t[`${key}Rating`], s = t[`${key}Slope`];
+        const rFilled = r !== '' && r != null;
+        const sFilled = s !== '' && s != null;
+        if (!rFilled && !sFilled) continue;
+        if (!rFilled || isNaN(r)) e[`tee_${key}Rating_${i}`] = 'rating required';
+        if (!sFilled || isNaN(s) || s < 55 || s > 155) e[`tee_${key}Slope_${i}`] = 'slope 55–155';
+        if (rFilled && sFilled && !isNaN(r) && !isNaN(s) && s >= 55 && s <= 155) hasAnyPair = true;
+      }
+      if (!hasAnyPair && !e[`tee_mensRating_${i}`] && !e[`tee_womensRating_${i}`]) {
+        e[`tee_ratingreq_${i}`] = "Enter a men's and/or women's rating + slope";
+      }
 
       const holeParSum = t.holes.reduce((s, h) => s + h.par, 0);
       const teePar = parseInt(t.par);
@@ -72,15 +98,26 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   }
 
   function buildCourse() {
-    const mappedTees = tees.map(t => ({
-      id: t.id,
-      name: t.name,
-      color: t.color,
-      rating: parseFloat(t.rating),
-      slope: parseInt(t.slope),
-      par: parseInt(t.par),
-      holes: t.holes,
-    }));
+    const numF = v => (v === '' || v == null ? null : parseFloat(v));
+    const numI = v => (v === '' || v == null ? null : parseInt(v));
+    const mappedTees = tees.map(t => {
+      const mensRating   = numF(t.mensRating);
+      const mensSlope    = numI(t.mensSlope);
+      const womensRating = numF(t.womensRating);
+      const womensSlope  = numI(t.womensSlope);
+      return {
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        color2: t.color2?.trim() ? t.color2.trim() : null,
+        mensRating, mensSlope, womensRating, womensSlope,
+        // Legacy single fields kept for backward compatibility (prefer women's).
+        rating: womensRating ?? mensRating,
+        slope:  womensSlope  ?? mensSlope,
+        par: parseInt(t.par),
+        holes: t.holes,
+      };
+    });
     return {
       id: existing?.id || uuid(),
       name: name.trim(),
@@ -219,6 +256,16 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   />
                 </div>
                 <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Par</label>
+                  <input
+                    type="number" inputMode="numeric"
+                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-hairline'}`}
+                    value={tee.par}
+                    onChange={e => { updateTee(tee.id, 'par', e.target.value); setErrors(x => ({ ...x, [`tee_par_${i}`]: '' })); }}
+                  />
+                  {errors[`tee_par_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_par_${i}`]}</p>}
+                </div>
+                <div>
                   <label className="text-xs text-gray-400 mb-1 block">Color *</label>
                   <input
                     list={`tee-colors-${tee.id}`}
@@ -232,37 +279,53 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
                   </datalist>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Course Rating *</label>
+                  <label className="text-xs text-gray-400 mb-1 block">Combo 2nd color</label>
                   <input
-                    type="number" step="0.1" inputMode="decimal"
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_rating_${i}`] ? 'border-red-400' : 'border-hairline'}`}
-                    value={tee.rating}
-                    onChange={e => { updateTee(tee.id, 'rating', e.target.value); setErrors(x => ({ ...x, [`tee_rating_${i}`]: '' })); }}
-                    placeholder="72.1"
+                    list={`tee-colors2-${tee.id}`}
+                    className="w-full border border-hairline rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink bg-white"
+                    value={tee.color2 ?? ''}
+                    onChange={e => updateTee(tee.id, 'color2', e.target.value)}
+                    placeholder="e.g. White (optional)"
                   />
-                  {errors[`tee_rating_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_rating_${i}`]}</p>}
+                  <datalist id={`tee-colors2-${tee.id}`}>
+                    {TEE_COLORS.map(c => <option key={c} value={c} />)}
+                  </datalist>
                 </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Slope (55–155) *</label>
-                  <input
-                    type="number" inputMode="numeric"
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_slope_${i}`] ? 'border-red-400' : 'border-hairline'}`}
-                    value={tee.slope}
-                    onChange={e => { updateTee(tee.id, 'slope', e.target.value); setErrors(x => ({ ...x, [`tee_slope_${i}`]: '' })); }}
-                    placeholder="113"
-                  />
-                  {errors[`tee_slope_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_slope_${i}`]}</p>}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Par</label>
-                  <input
-                    type="number" inputMode="numeric"
-                    className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_par_${i}`] ? 'border-red-400' : 'border-hairline'}`}
-                    value={tee.par}
-                    onChange={e => { updateTee(tee.id, 'par', e.target.value); setErrors(x => ({ ...x, [`tee_par_${i}`]: '' })); }}
-                  />
-                  {errors[`tee_par_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`tee_par_${i}`]}</p>}
-                </div>
+              </div>
+
+              {/* Course rating + slope, separately for men's and women's tees. At
+                  least one set is required; leave the other blank if unknown. */}
+              <div className="space-y-2">
+                {[{ key: 'mens', label: "Men's" }, { key: 'womens', label: "Women's" }].map(({ key, label }) => (
+                  <div key={key} className="flex items-end gap-2">
+                    <span className="text-xs font-semibold text-gray-500 w-14 pb-2 flex-shrink-0">{label}</span>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-400 mb-1 block">Rating</label>
+                      <input
+                        type="number" step="0.1" inputMode="decimal"
+                        className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_${key}Rating_${i}`] ? 'border-red-400' : 'border-hairline'}`}
+                        value={tee[`${key}Rating`] ?? ''}
+                        onChange={e => { updateTee(tee.id, `${key}Rating`, e.target.value); setErrors(x => ({ ...x, [`tee_${key}Rating_${i}`]: '', [`tee_ratingreq_${i}`]: '' })); }}
+                        placeholder="72.1"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-400 mb-1 block">Slope</label>
+                      <input
+                        type="number" inputMode="numeric"
+                        className={`w-full border rounded-lg px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-ink ${errors[`tee_${key}Slope_${i}`] ? 'border-red-400' : 'border-hairline'}`}
+                        value={tee[`${key}Slope`] ?? ''}
+                        onChange={e => { updateTee(tee.id, `${key}Slope`, e.target.value); setErrors(x => ({ ...x, [`tee_${key}Slope_${i}`]: '' })); }}
+                        placeholder="113"
+                      />
+                    </div>
+                  </div>
+                ))}
+                {['mens', 'womens'].map(key => {
+                  const msg = errors[`tee_${key}Rating_${i}`] || errors[`tee_${key}Slope_${i}`];
+                  return msg ? <p key={key} className="text-red-500 text-xs">{key === 'mens' ? "Men's" : "Women's"}: {msg}</p> : null;
+                })}
+                {errors[`tee_ratingreq_${i}`] && <p className="text-red-500 text-xs">{errors[`tee_ratingreq_${i}`]}</p>}
               </div>
             </div>
           ))}

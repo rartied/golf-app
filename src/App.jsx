@@ -13,6 +13,7 @@ import StrokeCard from './pages/StrokeCard'
 import Stats from './pages/Stats'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Settings from './pages/Settings'
 import Invites from './pages/admin/Invites'
 
 function LoadingScreen() {
@@ -68,11 +69,12 @@ function AuthedApp() {
           <Route path="/courses/:courseId" element={<AddCourse {...data} />} />
           <Route path="/strokes" element={<StrokeCard {...data} />} />
           <Route path="/stats" element={<Stats {...data} />} />
+          <Route path="/settings" element={<Settings />} />
           {user?.is_admin && <Route path="/admin/invites" element={<Invites />} />}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      {!isPlay && <Navigation isAdmin={user?.is_admin} />}
+      {!isPlay && <Navigation />}
     </div>
   )
 }

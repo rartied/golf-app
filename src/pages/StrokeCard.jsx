@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { calcCourseHandicap, getHoleStrokes } from '../utils/handicap';
+import { calcCourseHandicap, getHoleStrokes, teeRatingSlope } from '../utils/handicap';
+import { useAuth } from '../context/AuthContext';
 
 function teeColorHex(color) {
   const map = {
@@ -89,6 +90,7 @@ function CourseSearch({ courses, selected, onSelect }) {
 
 export default function StrokeCard({ courses, handicapIndex }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedCourse, setSelectedCourse] = useState(courses[0] ?? null);
   const [selectedTee, setSelectedTee] = useState(courses[0]?.tees[0] ?? null);
 
@@ -130,8 +132,9 @@ export default function StrokeCard({ courses, handicapIndex }) {
     );
   }
 
-  const courseHandicap = selectedTee
-    ? calcCourseHandicap(handicapIndex, selectedTee.slope, selectedTee.rating, selectedTee.par)
+  const teeRS = teeRatingSlope(selectedTee, user?.gender);
+  const courseHandicap = selectedTee && teeRS.rating != null
+    ? calcCourseHandicap(handicapIndex, teeRS.slope, teeRS.rating, selectedTee.par)
     : null;
 
   const targetGross = courseHandicap !== null ? selectedTee.par + courseHandicap : null;
@@ -206,7 +209,7 @@ export default function StrokeCard({ courses, handicapIndex }) {
             <div className="px-4 py-3 flex justify-between items-center">
               <span className="text-gray-400 text-xs">Rating / Slope / Par</span>
               <span className="text-gray-500 text-xs font-medium">
-                {selectedTee.rating} / {selectedTee.slope} / {selectedTee.par}
+                {teeRS.rating} / {teeRS.slope} / {selectedTee.par}
               </span>
             </div>
           </div>

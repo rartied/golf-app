@@ -57,21 +57,29 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   const [location, setLocation] = useState(existing?.location || '');
   const [tees, setTees] = useState(() => {
     if (!existing?.tees?.length) return [emptyTee()];
-    return existing.tees.map(t => ({
-      id: t.id,
-      name: t.name ?? '',
-      color: t.color ?? 'White',
-      color2: t.color2 ?? '',
-      // Existing course data was entered for women's tees, so legacy single
-      // rating/slope map onto the women's fields.
-      mensRating:   t.mensRating   ?? '',
-      mensSlope:    t.mensSlope    ?? '',
-      womensRating: t.womensRating ?? t.rating ?? '',
-      womensSlope:  t.womensSlope  ?? t.slope  ?? '',
-      par: t.par ?? 72,
-      // Use tee-specific holes if present, otherwise fall back to course-level holes
-      holes: toGenderedHoles(t.holes?.length === 18 ? t.holes : (existing.holes?.length === 18 ? existing.holes : null)),
-    }));
+    return existing.tees.map(t => {
+      // The legacy single rating/slope (pre gender-split) was entered for
+      // women's tees, so map it onto women's — but ONLY for a true legacy tee
+      // with no gendered ratings. On newer tees `rating`/`slope` is just a
+      // mirror of whichever gender is set, so falling back to it would wrongly
+      // give a men's-only tee a women's rating (and demand a women's SI it
+      // doesn't have, silently blocking saves).
+      const hasGendered = [t.mensRating, t.mensSlope, t.womensRating, t.womensSlope]
+        .some(v => v != null && v !== '');
+      return {
+        id: t.id,
+        name: t.name ?? '',
+        color: t.color ?? 'White',
+        color2: t.color2 ?? '',
+        mensRating:   t.mensRating   ?? '',
+        mensSlope:    t.mensSlope    ?? '',
+        womensRating: t.womensRating ?? (hasGendered ? '' : (t.rating ?? '')),
+        womensSlope:  t.womensSlope  ?? (hasGendered ? '' : (t.slope ?? '')),
+        par: t.par ?? 72,
+        // Use tee-specific holes if present, otherwise fall back to course-level holes
+        holes: toGenderedHoles(t.holes?.length === 18 ? t.holes : (existing.holes?.length === 18 ? existing.holes : null)),
+      };
+    });
   });
   const [activeTeeId, setActiveTeeId] = useState(() => tees[0]?.id);
   // Which gender's rating/slope + stroke index the active tee editor is showing.

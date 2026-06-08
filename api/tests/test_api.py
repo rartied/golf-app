@@ -139,3 +139,22 @@ def test_round_crud_and_scoping(client, admin, user):
 
 def test_rounds_require_auth(client):
     assert client.get("/api/rounds").status_code == 401
+
+
+# ─── Users roster (for course-ranking "played by" filter) ────────────────────
+def test_list_users_with_played_courses(client, admin, user):
+    ph = auth_headers(client, "player@example.com")
+    ah = auth_headers(client, "admin@example.com")
+    body = dict(ROUND_BODY, course_id="course-123")
+    assert client.post("/api/rounds", headers=ph, json=body).status_code == 201
+
+    res = client.get("/api/users", headers=ah)  # any authed user can read the roster
+    assert res.status_code == 200
+    by_name = {u["display_name"]: u for u in res.json()}
+    assert by_name["Player"]["played_course_ids"] == ["course-123"]
+    assert by_name["Admin"]["played_course_ids"] == []
+    assert "email" not in res.json()[0]  # no sensitive fields leaked
+
+
+def test_users_require_auth(client):
+    assert client.get("/api/users").status_code == 401

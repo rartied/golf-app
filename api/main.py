@@ -7,7 +7,7 @@ support the Vite dev server when not using its proxy.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth, courses, invites, rounds
+from .routers import auth, courses, invites, rounds, users
 
 app = FastAPI(title="Golf Tracker API")
 
@@ -23,6 +23,7 @@ app.include_router(auth.router)
 app.include_router(invites.router)
 app.include_router(courses.router)
 app.include_router(rounds.router)
+app.include_router(users.router)
 
 
 @app.get("/api/health")

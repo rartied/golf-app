@@ -46,18 +46,21 @@ function roundToRow(round) {
 export function useAppData() {
   const [rounds, setRounds] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const [roundsData, coursesData] = await Promise.all([
+        const [roundsData, coursesData, usersData] = await Promise.all([
           api.get('/rounds'),
           api.get('/courses'),
+          api.get('/users').catch(() => []), // roster is non-critical; don't block load
         ]);
         setRounds((roundsData ?? []).map(rowToRound));
         setCourses(coursesData ?? []);
+        setUsers(usersData ?? []);
       } catch (err) {
         setError(err.message ?? 'Failed to load data');
       } finally {
@@ -130,6 +133,7 @@ export function useAppData() {
   return {
     rounds,
     courses,
+    users,
     handicapIndex,
     loading,
     error,

@@ -25,6 +25,15 @@ class UserUpdateIn(BaseModel):
     gender: str | None = None  # 'mens' | 'womens'
 
 
+class UserWithPlaysOut(BaseModel):
+    """Roster entry for the course-ranking "played by" filter."""
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    display_name: str | None = None
+    gender: str = "mens"
+    played_course_ids: list[str] = []
+
+
 class LoginIn(BaseModel):
     email: EmailStr
     password: str

@@ -65,7 +65,37 @@ function AddTeeModal({ course, gender, onCancel, onSave }) {
   const [rating, setRating] = useState('');
   const [slope, setSlope]   = useState('');
   const [par, setPar]       = useState(String(sourceTee?.par ?? 72));
+  const [si, setSi]         = useState(() => Array(18).fill(null)); // gender SI when none exists yet
   const [error, setError]   = useState('');
+
+  // Does the course already have this gender's hole-by-hole stroke index on any
+  // tee? If so we reuse it; if not, the user enters it once here and it carries
+  // to any later tees of this gender.
+  const otherGender = gender === 'womens' ? 'mens' : 'womens';
+  const otherGenderLabel = otherGender === 'womens' ? "Women's" : "Men's";
+  function courseSIFor(g) {
+    const key = g === 'womens' ? 'womensStrokeIndex' : 'mensStrokeIndex';
+    for (const t of (course.tees || [])) {
+      const hs = t.holes || [];
+      if (hs.length !== 18) continue;
+      const arr = hs.map(h => h[key] ?? (g === 'womens' ? h.strokeIndex : null));
+      if (arr.every(v => v != null && v !== '')) return arr.map(Number);
+    }
+    return null;
+  }
+  const existingSI = courseSIFor(gender);   // reuse if present
+  const needsSI = !existingSI;
+  const copyFromSI = courseSIFor(otherGender); // for the "copy from other gender" shortcut
+
+  function setSiAt(i, val) {
+    setSi(prev => {
+      const next = prev.slice();
+      if (val === '') { next[i] = null; return next; }
+      const n = parseInt(val, 10);
+      next[i] = (!isNaN(n) && n >= 1 && n <= 18) ? n : prev[i];
+      return next;
+    });
+  }
 
   // A tee already exists for this exact colour (and combo). Its shared fields
   // (name + par) belong to it and are locked; we're only adding this gender's
@@ -89,15 +119,27 @@ function AddTeeModal({ course, gender, onCancel, onSave }) {
     }
     if (isNaN(p)) return setError('Par is required.');
 
+    // Stroke index: reuse the course's existing gender SI, or validate the one
+    // the user just entered (complete, unique 1–18).
+    let giArr = existingSI;
+    if (needsSI) {
+      if (si.some(v => v == null)) return setError(`Enter a ${genderLabel} stroke index (1–18) for all 18 holes.`);
+      const seen = new Set();
+      for (const v of si) {
+        if (v < 1 || v > 18) return setError('Stroke index must be 1–18.');
+        if (seen.has(v)) return setError(`Stroke index ${v} is used more than once.`);
+        seen.add(v);
+      }
+      giArr = si.slice();
+    }
+
     const baseHoles = sourceTee?.holes
       ?? Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4 }));
-    // Seed only this gender's stroke index from the source tee; the other gender
-    // is left blank and can be filled in Courses.
-    const holes = baseHoles.map(h => ({
+    const holes = baseHoles.map((h, i) => ({
       number: h.number,
       par: h.par,
-      mensStrokeIndex:   gender === 'mens'   ? (h.mensStrokeIndex   ?? h.strokeIndex ?? null) : null,
-      womensStrokeIndex: gender === 'womens' ? (h.womensStrokeIndex ?? h.strokeIndex ?? null) : null,
+      mensStrokeIndex:   gender === 'mens'   ? (giArr[i] ?? null) : null,
+      womensStrokeIndex: gender === 'womens' ? (giArr[i] ?? null) : null,
     }));
     onSave({
       id: uuid(),
@@ -219,13 +261,48 @@ function AddTeeModal({ course, gender, onCancel, onSave }) {
           />
         </div>
 
+        {/* Stroke index — entered once per gender per course, then reused. */}
+        {needsSI ? (
+          <div>
+            <div className="flex items-center justify-between">
+              <label className={labelCls}>{genderLabel} stroke index</label>
+              {copyFromSI && (
+                <button
+                  type="button"
+                  onClick={() => { setSi(copyFromSI.slice()); setError(''); }}
+                  className="text-xs font-semibold text-golf-green active:opacity-70"
+                >
+                  Copy from {otherGenderLabel}
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-0.5 mb-2">
+              No {genderLabel} stroke index on this course yet — set the handicap order (1 = hardest) for all 18 holes. You'll only do this once.
+            </p>
+            <div className="grid grid-cols-9 gap-1">
+              {si.map((v, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-[9px] text-gray-400 leading-none mb-0.5">{i + 1}</div>
+                  <input
+                    type="number" inputMode="numeric" min="1" max="18"
+                    value={v ?? ''}
+                    onChange={e => setSiAt(i, e.target.value)}
+                    placeholder="–"
+                    className="w-full px-0 py-1.5 text-center text-xs font-bold text-gray-800 bg-white border border-hairline rounded-md outline-none focus:ring-1 focus:ring-ink"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400">{genderLabel} stroke index comes from this course's existing {genderLabel} tees.</p>
+        )}
+
         {matched
           ? (lockRating
               ? <p className="text-xs text-amber-600">{teeLabel(matched)} already has {genderLabel} data — pick a different colour, or add a combo to create a new tee.</p>
-              : <p className="text-xs text-gray-500">{teeLabel(matched)} already exists — its name & par are locked. You're adding its {genderLabel} rating, slope &amp; stroke index.</p>)
-          : (sourceTee
-              ? <p className="text-xs text-gray-400">Hole pars & {genderLabel} stroke indexes are copied from {sourceTee.name || sourceTee.color || 'an existing tee'}. Adjust them in Courses if they differ.</p>
-              : <p className="text-xs text-amber-600">No existing hole data — stroke indexes will be blank. Set them later in Courses.</p>)}
+              : <p className="text-xs text-gray-500">{teeLabel(matched)} already exists — its name & par are locked. You're adding its {genderLabel} rating &amp; slope.</p>)
+          : (!sourceTee && <p className="text-xs text-amber-600">No existing hole data — par defaults to 4 per hole; adjust in Courses.</p>)}
 
         {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
 

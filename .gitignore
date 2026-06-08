@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+
+# Local env — never commit secrets/keys
+.env
+.env.local
+.env.*.local
+api/.env
+
+# Python
+api/venv/
+__pycache__/
+*.pyc
+.pytest_cache/

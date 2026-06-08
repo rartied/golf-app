@@ -1,0 +1,97 @@
+import { useState } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useAppData } from './hooks/useAppData'
+import { useAuth } from './context/AuthContext'
+import Navigation from './components/Navigation'
+import Dashboard from './pages/Dashboard'
+import PlayRound from './pages/PlayRound'
+import History from './pages/History'
+import RoundDetail from './pages/RoundDetail'
+import Courses from './pages/Courses'
+import AddCourse from './pages/AddCourse'
+import StrokeCard from './pages/StrokeCard'
+import Stats from './pages/Stats'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Invites from './pages/admin/Invites'
+
+function LoadingScreen() {
+  return (
+    <div className="h-dvh bg-canvas-cream flex flex-col items-center justify-center gap-4">
+      <p className="text-4xl">⛳</p>
+      <p className="text-gray-500 text-sm font-medium">Loading your data…</p>
+    </div>
+  )
+}
+
+function ErrorScreen({ message }) {
+  return (
+    <div className="min-h-screen bg-canvas-cream flex flex-col items-center justify-center gap-3 px-8 text-center">
+      <p className="text-4xl">⚠️</p>
+      <p className="text-gray-800 font-semibold">Could not connect</p>
+      <p className="text-gray-500 text-sm">
+        {message ?? 'Check your connection and reload the page.'}
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        className="mt-2 px-5 py-2.5 bg-golf-green text-white text-sm font-semibold rounded-xl"
+      >
+        Reload
+      </button>
+    </div>
+  )
+}
+
+// The authenticated app — loads user data and renders the main routes.
+function AuthedApp() {
+  const data = useAppData()
+  const location = useLocation()
+  const { user } = useAuth()
+  const [courseSort, setCourseSort] = useState(null)
+  const [courseSearch, setCourseSearch] = useState('')
+
+  if (data.loading) return <LoadingScreen />
+  if (data.error)   return <ErrorScreen message={data.error} />
+
+  const isPlay = location.pathname === '/play'
+
+  return (
+    <div className="h-dvh flex flex-col">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <Routes>
+          <Route path="/" element={<Dashboard {...data} />} />
+          <Route path="/play" element={<PlayRound {...data} />} />
+          <Route path="/history" element={<History {...data} />} />
+          <Route path="/history/:id" element={<RoundDetail {...data} />} />
+          <Route path="/courses" element={<Courses {...data} courseSort={courseSort} setCourseSort={setCourseSort} courseSearch={courseSearch} setCourseSearch={setCourseSearch} />} />
+          <Route path="/courses/add" element={<AddCourse {...data} />} />
+          <Route path="/courses/:courseId" element={<AddCourse {...data} />} />
+          <Route path="/strokes" element={<StrokeCard {...data} />} />
+          <Route path="/stats" element={<Stats {...data} />} />
+          {user?.is_admin && <Route path="/admin/invites" element={<Invites />} />}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+      {!isPlay && <Navigation isAdmin={user?.is_admin} />}
+    </div>
+  )
+}
+
+export default function App() {
+  const { user, loading } = useAuth()
+
+  if (loading) return <LoadingScreen />
+
+  // Unauthenticated: only login / invite-based registration are reachable.
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
+  }
+
+  return <AuthedApp />
+}

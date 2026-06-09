@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
-import { ArrowLeft, ChevronLeft, ChevronRight, Flag, Search, Plus } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Flag, Search, Plus, Star } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import { DirectionPicker, StatTracker, PenaltyPill, dotColor, relativeScore } from '../components/HoleEditor';
 import { storage } from '../utils/storage';
@@ -381,6 +381,7 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
   const [currentHole, setCurrentHole]   = useState(0);
   const [date, setDate]                 = useState(() => new Date().toISOString().split('T')[0]);
   const [courseSearch, setCourseSearch] = useState('');
+  const [favIds, setFavIds] = useState(() => storage.getFavoriteCourseIds());
   const [nineHoleType, setNineHoleType] = useState(null);
   const [trackStats, setTrackStats]     = useState(true);  // false = score-only (no putts/fairway/GIR/penalties)
   const [showAddTee, setShowAddTee]     = useState(false);
@@ -611,9 +612,67 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
                   Add a course →
                 </button>
               </div>
-            ) : (
-              <>
-                {courses.length > 3 && (
+            ) : (() => {
+              function toggleFav(e, id) {
+                e.stopPropagation();
+                setFavIds(prev => {
+                  const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+                  storage.saveFavoriteCourseIds(next);
+                  return next;
+                });
+              }
+
+              const favCourses = courses.filter(c => favIds.includes(c.id));
+              const q = courseSearch.trim().toLowerCase();
+              const listCourses = q
+                ? courses.filter(c =>
+                    c.name.toLowerCase().includes(q) ||
+                    (c.location ?? '').toLowerCase().includes(q)
+                  )
+                : favCourses.length > 0 ? favCourses : courses.slice(0, 3);
+              const isSearching = !!q;
+
+              function CourseRow({ course }) {
+                const isFav = favIds.includes(course.id);
+                return (
+                  <button
+                    key={course.id}
+                    onClick={() => { setSelectedCourse(course); setSelectedTee(null); setNineHoleType(null); }}
+                    className={`w-full text-left bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 transition-all ${
+                      selectedCourse?.id === course.id ? 'ring-2 ring-ink' : ''
+                    }`}
+                  >
+                    <div className="w-10 h-10 bg-golf-light rounded-full flex items-center justify-center flex-shrink-0">
+                      <Flag size={18} className="text-golf-green" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm">{course.name}</p>
+                      {course.location && <p className="text-gray-400 text-xs truncate">{course.location}</p>}
+                    </div>
+                    {selectedCourse?.id === course.id && (
+                      <div className="w-5 h-5 bg-golf-green rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
+                    <button
+                      onClick={e => toggleFav(e, course.id)}
+                      className="p-1 -mr-1 flex-shrink-0"
+                      aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Star
+                        size={18}
+                        className={isFav ? 'text-amber-400' : 'text-gray-300'}
+                        fill={isFav ? 'currentColor' : 'none'}
+                      />
+                    </button>
+                  </button>
+                );
+              }
+
+              return (
+                <>
                   <div className="relative mb-2">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
@@ -624,41 +683,21 @@ export default function PlayRound({ courses, handicapIndex, addRound, updateCour
                       className="w-full bg-white border border-hairline rounded-full pl-9 pr-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-ink shadow-card"
                     />
                   </div>
-                )}
-                <div className="space-y-2">
-                  {(courseSearch.trim()
-                    ? courses.filter(c =>
-                        c.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
-                        (c.location ?? '').toLowerCase().includes(courseSearch.toLowerCase())
-                      )
-                    : courses.slice(0, 3)
-                  ).map(course => (
-                    <button
-                      key={course.id}
-                      onClick={() => { setSelectedCourse(course); setSelectedTee(null); setNineHoleType(null); }}
-                      className={`w-full text-left bg-white rounded-xl shadow-card px-4 py-3 flex items-center gap-3 transition-all ${
-                        selectedCourse?.id === course.id ? 'ring-2 ring-ink' : ''
-                      }`}
-                    >
-                      <div className="w-10 h-10 bg-golf-light rounded-full flex items-center justify-center flex-shrink-0">
-                        <Flag size={18} className="text-golf-green" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm">{course.name}</p>
-                        {course.location && <p className="text-gray-400 text-xs truncate">{course.location}</p>}
-                      </div>
-                      {selectedCourse?.id === course.id && (
-                        <div className="w-5 h-5 bg-golf-green rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+                  {!isSearching && favCourses.length === 0 && (
+                    <p className="text-xs text-gray-400 px-1 mb-2">Star a course to pin it here for quick access.</p>
+                  )}
+                  {!isSearching && favCourses.length > 0 && (
+                    <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-widest px-1 mb-1.5">Favorites</p>
+                  )}
+                  <div className="space-y-2">
+                    {listCourses.map(course => <CourseRow key={course.id} course={course} />)}
+                    {listCourses.length === 0 && (
+                      <p className="text-sm text-gray-400 text-center py-4">No courses match.</p>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {selectedCourse && (

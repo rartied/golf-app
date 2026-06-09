@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ChevronRight, Plus, BarChart2 } from 'lucide-react';
@@ -16,22 +17,37 @@ function smoothCurve(pts) {
 }
 
 function TrendSparkline({ rounds, handicapIndex }) {
-  const raw = [...rounds]
+  const [activeIdx, setActiveIdx] = useState(null);
+  const scrollRef = useRef(null);
+  const clearTimer = useRef(null);
+  const prevIdxRef = useRef(null);
+
+  // All rounds with a score differential, oldest first — no cap so older data is reachable by scrolling
+  const sorted = [...rounds]
     .filter(r => r.scoreDifferential != null)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .slice(-20)
-    .map(r => r.scoreDifferential);
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  if (raw.length < 2) return null;
+  // Scroll to the right (most recent) on mount and whenever a new round is added
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+  }, [rounds.length]);
 
-  const data = raw.map((_, i) => {
+  if (sorted.length < 2) return null;
+
+  const raw   = sorted.map(r => r.scoreDifferential);
+  const dates = sorted.map(r => r.date);
+  const data  = raw.map((_, i) => {
     const slice = raw.slice(Math.max(0, i - 2), i + 1);
     return slice.reduce((s, v) => s + v, 0) / slice.length;
   });
 
-  const VW = 300, VH = 80, PAD_L = 8, PAD_R = 18, PAD_T = 16, PAD_B = 14;
-  const iW = VW - PAD_L - PAD_R;
+  // Each round gets its own fixed pixel column — chart is wider than the screen when there are many rounds
+  const POINT_W = 40;
+  const VH = 80, PAD_L = 20, PAD_R = 20, PAD_T = 16, PAD_B = 14;
   const iH = VH - PAD_T - PAD_B;
+  const totalWidth = PAD_L + (data.length - 1) * POINT_W + PAD_R;
 
   const allVals = handicapIndex != null ? [...data, handicapIndex] : data;
   const lo = Math.min(...allVals);
@@ -41,7 +57,7 @@ function TrendSparkline({ rounds, handicapIndex }) {
   const hi2 = hi + span * 0.22;
   const span2 = hi2 - lo2;
 
-  const px = i => PAD_L + (i / (data.length - 1)) * iW;
+  const px = i => PAD_L + i * POINT_W;
   const py = v => PAD_T + (1 - (v - lo2) / span2) * iH;
 
   const pts = data.map((d, i) => ({ x: px(i), y: py(d) }));
@@ -53,42 +69,135 @@ function TrendSparkline({ rounds, handicapIndex }) {
     ? (relVal >= 0 ? '+' : '') + relVal.toFixed(1)
     : latestRaw.toFixed(1);
 
+  // Convert a touch's clientX to the nearest data index, accounting for scroll offset
+  function idxFromClientX(clientX) {
+    if (!scrollRef.current) return null;
+    const rect = scrollRef.current.getBoundingClientRect();
+    const svgX = (clientX - rect.left) + scrollRef.current.scrollLeft;
+    const idx = Math.round((svgX - PAD_L) / POINT_W);
+    return Math.max(0, Math.min(data.length - 1, idx));
+  }
+
+  function triggerHaptic(idx) {
+    if (idx !== prevIdxRef.current) {
+      prevIdxRef.current = idx;
+      navigator.vibrate?.(8);
+    }
+  }
+
+  function onTouchStart(e) {
+    if (clearTimer.current) clearTimeout(clearTimer.current);
+    const idx = idxFromClientX(e.touches[0].clientX);
+    triggerHaptic(idx);
+    setActiveIdx(idx);
+  }
+
+  function onTouchMove(e) {
+    const idx = idxFromClientX(e.touches[0].clientX);
+    triggerHaptic(idx);
+    setActiveIdx(idx);
+  }
+
+  function onTouchEnd() {
+    clearTimer.current = setTimeout(() => setActiveIdx(null), 1800);
+  }
+
+  // Show a date label every N points along the bottom of the chart
+  const labelStep = data.length <= 8 ? 1 : data.length <= 16 ? 2 : 4;
+
+  const scrubbing = activeIdx !== null;
+  const activePt  = scrubbing ? pts[activeIdx] : null;
+  const activeVal = scrubbing ? data[activeIdx].toFixed(1) : null;
+  const activeDate = scrubbing
+    ? format(new Date(dates[activeIdx] + 'T00:00:00'), 'MMM d, yyyy')
+    : null;
+
   return (
-    <div className="absolute inset-0 flex items-center">
-      <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="none">
-
-        {handicapIndex != null && (
-          <>
-            <line
-              x1={PAD_L} y1={py(handicapIndex).toFixed(1)}
-              x2={VW - PAD_R} y2={py(handicapIndex).toFixed(1)}
-              stroke="rgba(255,255,255,0.25)" strokeWidth="1" strokeDasharray="3,4"
-            />
-            <text x={PAD_L + 5} y={(py(handicapIndex) - 3).toFixed(1)} fill="rgba(255,255,255,0.35)" fontSize="7" fontWeight="600">
-              HCP
-            </text>
-            <text
-              x={VW - PAD_R - 3} y={(py(handicapIndex ?? lo2) + 10).toFixed(1)}
-              textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="6.5" fontWeight="600" letterSpacing="1"
-            >
-              3-RND AVG · SCORE DIFF
-            </text>
-          </>
-        )}
-
-        <path d={linePath} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-
-        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="6" fill="rgba(255,255,255,0.15)" />
-        <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="3" fill="white" />
-
-        <text
-          x={last.x.toFixed(1)} y={(last.y - 10).toFixed(1)}
-          textAnchor="middle" fill="white" fontSize="9" fontWeight="700" opacity="0.9"
+    <>
+      {/* Scrollable chart — wider than the screen, native horizontal scroll to view older rounds */}
+      <div
+        ref={scrollRef}
+        className="absolute inset-0 scrollbar-hide"
+        style={{ overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <svg
+          viewBox={`0 0 ${totalWidth} ${VH}`}
+          width={totalWidth}
+          height="100%"
+          preserveAspectRatio="none"
         >
-          {relLabel}
-        </text>
-      </svg>
-    </div>
+          {handicapIndex != null && (
+            <>
+              <line
+                x1={PAD_L} y1={py(handicapIndex).toFixed(1)}
+                x2={totalWidth - PAD_R} y2={py(handicapIndex).toFixed(1)}
+                stroke="rgba(255,255,255,0.25)" strokeWidth="1" strokeDasharray="3,4"
+              />
+              <text x={PAD_L + 5} y={(py(handicapIndex) - 3).toFixed(1)} fill="rgba(255,255,255,0.35)" fontSize="7" fontWeight="600">
+                HCP
+              </text>
+            </>
+          )}
+
+          {/* Date axis labels along the bottom */}
+          {data.map((_, i) => {
+            if (i % labelStep !== 0 && i !== data.length - 1) return null;
+            return (
+              <text key={i} x={pts[i].x.toFixed(1)} y={(VH - 2).toFixed(1)}
+                textAnchor="middle" fill="rgba(255,255,255,0.28)" fontSize="6" fontWeight="600">
+                {format(new Date(dates[i] + 'T00:00:00'), 'MMM d')}
+              </text>
+            );
+          })}
+
+          <path d={linePath} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* Scrubber — vertical rule + highlighted dot */}
+          {scrubbing && activePt && (
+            <>
+              <line
+                x1={activePt.x.toFixed(1)} y1={PAD_T}
+                x2={activePt.x.toFixed(1)} y2={VH - PAD_B}
+                stroke="rgba(255,255,255,0.45)" strokeWidth="1" strokeDasharray="2,3"
+              />
+              <circle cx={activePt.x.toFixed(1)} cy={activePt.y.toFixed(1)} r="6" fill="rgba(255,255,255,0.18)" />
+              <circle cx={activePt.x.toFixed(1)} cy={activePt.y.toFixed(1)} r="3" fill="white" />
+            </>
+          )}
+
+          {/* Default: dot + value at the most recent point */}
+          {!scrubbing && (
+            <>
+              <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="6" fill="rgba(255,255,255,0.15)" />
+              <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="3" fill="white" />
+              <text x={last.x.toFixed(1)} y={(last.y - 10).toFixed(1)}
+                textAnchor="middle" fill="white" fontSize="9" fontWeight="700" opacity="0.9">
+                {relLabel}
+              </text>
+              {handicapIndex != null && (
+                <text
+                  x={(totalWidth - PAD_R - 3).toFixed(1)} y={(py(handicapIndex) + 10).toFixed(1)}
+                  textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="6.5" fontWeight="600" letterSpacing="1"
+                >
+                  3-RND AVG · SCORE DIFF
+                </text>
+              )}
+            </>
+          )}
+        </svg>
+      </div>
+
+      {/* Scrubber tooltip — fixed in the top-right of the header so it's always visible regardless of scroll position */}
+      {scrubbing && (
+        <div className="absolute top-3 right-4 text-right pointer-events-none z-30">
+          <p className="text-white font-bold leading-none" style={{ fontSize: 13 }}>{activeVal}</p>
+          <p className="text-white/55 font-semibold mt-0.5" style={{ fontSize: 9 }}>{activeDate}</p>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -110,7 +219,7 @@ export default function Dashboard({ rounds, courses, handicapIndex }) {
           style={{ background: 'linear-gradient(to right, #000000 50%, transparent)' }} />
 
         {/* Text on top */}
-        <div className="relative z-20 flex flex-col items-start">
+        <div className="relative z-20 flex flex-col items-start pointer-events-none">
           <h1 className="text-white text-5xl font-light tracking-tight">
             {handicapIndex !== null ? handicapIndex.toFixed(1) : '—'}
           </h1>

@@ -14,4 +14,7 @@ export const storage = {
   getActiveRound: () => load('golf_active_round', null),
   saveActiveRound: (round) => localStorage.setItem('golf_active_round', JSON.stringify(round)),
   clearActiveRound: () => localStorage.removeItem('golf_active_round'),
+
+  getFavoriteCourseIds: () => load('golf_favorite_courses', []),
+  saveFavoriteCourseIds: (ids) => localStorage.setItem('golf_favorite_courses', JSON.stringify(ids)),
 };

@@ -217,7 +217,11 @@ export default function AddCourse({ courses, addCourse, updateCourse }) {
   }
 
   function addTee() {
-    const t = emptyTee();
+    const refHoles = tees[0]?.holes;
+    const holes = refHoles?.length === 18
+      ? refHoles.map(h => ({ number: h.number, par: h.par, mensStrokeIndex: null, womensStrokeIndex: null }))
+      : emptyHoles();
+    const t = { ...emptyTee(), holes };
     setTees(prev => [...prev, t]);
     setActiveTeeId(t.id);
   }

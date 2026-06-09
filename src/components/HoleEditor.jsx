@@ -17,9 +17,10 @@ function dpArc(a1, a2) {
 }
 
 const FW_SECTORS = [
-  { v: 'right', a1: 1,   a2: 119 },
-  { v: 'na',    a1: 121, a2: 239 },
-  { v: 'left',  a1: 241, a2: 359 },
+  { v: 'long',  a1: 317, a2: 43  },
+  { v: 'right', a1: 47,  a2: 133 },
+  { v: 'na',    a1: 137, a2: 223 },
+  { v: 'left',  a1: 227, a2: 313 },
 ];
 const GRN_SECTORS = [
   { v: 'long',  a1: 317, a2: 43  },
@@ -51,6 +52,7 @@ export function dotColor(score, par) {
 export function DirectionPicker({ label, value, onChange, hasLongShort = false }) {
   function pick(v) { onChange(value === v ? null : v); }
   const sectors = hasLongShort ? GRN_SECTORS : FW_SECTORS;
+  const hasNa = sectors.some(s => s.v === 'na');
   const [naX, naY] = dpPt((DP_OR + DP_IR) / 2, 180);
   return (
     <div className="flex-1 flex flex-col items-center">
@@ -60,7 +62,7 @@ export function DirectionPicker({ label, value, onChange, hasLongShort = false }
           {sectors.map(({ v, a1, a2 }) => (
             <path key={v} d={dpArc(a1, a2)} fill={value === v ? '#000000' : '#f3f4f6'} onClick={() => pick(v)} style={{ cursor: 'pointer' }} />
           ))}
-          {!hasLongShort && (
+          {hasNa && (
             <text x={naX.toFixed(1)} y={(naY + 4).toFixed(1)} textAnchor="middle" fontSize="11" fontWeight="700"
               fill={value === 'na' ? 'white' : '#d1d5db'} style={{ pointerEvents: 'none', userSelect: 'none' }}>×</text>
           )}

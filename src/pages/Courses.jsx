@@ -309,9 +309,9 @@ export default function Courses({ courses, users = [], deleteCourse, courseSort,
 
       {/* Filter & sort bottom sheet */}
       {showFilters && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40" onClick={() => setShowFilters(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowFilters(false)}>
           <div
-            className="w-full sm:max-w-md bg-canvas-cream rounded-t-2xl sm:rounded-2xl p-5 space-y-5 max-h-[85vh] overflow-y-auto"
+            className="w-full max-w-md bg-canvas-cream rounded-2xl p-5 space-y-5 max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
